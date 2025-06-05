@@ -1,0 +1,18 @@
+<h2>Admin Dashboard</h2>
+
+<!-- List of Customers -->
+<h3>Customers</h3>
+<ul>
+  <li *ngFor="let customer of customers">
+    {{ customer.name }} - {{ customer.contact }}
+  </li>
+</ul>
+
+<!-- List of Invoices -->
+<h3>Invoices</h3>
+<ul>
+  <li *ngFor="let invoice of invoices">
+    Invoice #{{ invoice.invoiceNumber }} - {{ invoice.total }}
+    <button (click)="deleteInvoice(invoice.id)">Delete</button>
+  </li>
+</ul>

@@ -1,0 +1,40 @@
+<div class="invoice-form">
+  <h2>Create Invoice</h2>
+
+  <!-- Logo upload -->
+  <label for="logoUpload">Upload Logo</label>
+  <input type="file" id="logoUpload" (change)="onLogoUpload($event)">
+
+  <!-- Customer selection -->
+  <label for="customerSelect">Select Customer</label>
+  <select formControlName="customer">
+    <option *ngFor="let customer of customers" [value]="customer.id">
+      {{ customer.name }}
+    </option>
+  </select>
+  <button type="button" (click)="addNewCustomer()">Add New Customer</button>
+
+  <!-- Line items -->
+  <div formArrayName="items">
+    <div *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+      <input formControlName="description" placeholder="Description">
+      <input type="number" formControlName="amount" placeholder="Amount">
+      <button type="button" (click)="removeItem(i)">Remove</button>
+    </div>
+  </div>
+  <button type="button" (click)="addItem()">Add Item</button>
+
+  <!-- Client Manager -->
+  <label for="clientManager">Client Manager</label>
+  <input formControlName="clientManager" placeholder="Client Manager">
+
+  <!-- Calculations -->
+  <div>
+    <p>Subtotal: {{ subtotal }}</p>
+    <p>GST (18%): {{ gst }}</p>
+    <p>Total: {{ total }}</p>
+    <p>Amount in Words: {{ amountInWords }}</p>
+  </div>
+
+  <button type="button" (click)="saveInvoice()">Save Invoice</button>
+</div>
