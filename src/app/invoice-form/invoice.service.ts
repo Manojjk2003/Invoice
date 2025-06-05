@@ -38,4 +38,15 @@ export class InvoiceService {
     const invoiceRef = doc(db, 'invoices', id);
     await deleteDoc(invoiceRef);
   }
+  async addCustomer(customerData: any): Promise<string> {
+    const customersRef = collection(db, 'customers');
+    const docRef = await addDoc(customersRef, customerData);
+    return docRef.id;
+  }
+
+  async getCustomers(): Promise<any[]> {
+    const snapshot = await getDocs(collection(db, 'customers'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+  
 }

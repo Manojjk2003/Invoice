@@ -1,108 +1,153 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormControl } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { InvoiceService } from './invoice.service';
-import jsPDF from 'jspdf';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 @Component({
   standalone: true,
   selector: 'app-invoice-form',
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule,],
   templateUrl: './invoice-form.component.html',
   styleUrls: ['./invoice-form.component.css']
 })
-export class InvoiceFormComponent {
-  invoiceForm: FormGroup;
-  logoFile: File | null = null;
-  customers: any[] = []; // List of saved customers
+export class InvoiceFormComponent implements OnInit {
+  invoiceForm!: FormGroup;
+  newCustomerForm!: FormGroup;
 
-  constructor(private fb: FormBuilder, private invoiceService: InvoiceService) {
+  logoFile: File | null = null;
+
+  customers: any[] = []; // Loaded from Firestore
+  showNewCustomer = false;
+ newCustomer = {
+  name: '',
+  address: '',
+  gst: '',
+  contact: ''
+};
+
+  constructor(
+    private fb: FormBuilder,
+    private invoiceService: InvoiceService
+  ) {}
+
+  ngOnInit(): void {
     this.invoiceForm = this.fb.group({
-      customer: [''],
-      clientManager: [''],
+      customer: ['', Validators.required],
+      clientManager: ['', Validators.required],
       items: this.fb.array([]),
-      logo: [null]
+      logo: ['']
     });
+
+    this.newCustomerForm = this.fb.group({
+    name: ['', Validators.required],
+    address: [''],
+    gst: [''],
+    contact: ['']
+  });
+
+    this.loadCustomers();
+    this.addItem(); // Add an initial line item
   }
 
-  get items() {
+  // Load customers from Firestore
+  async loadCustomers() {
+    this.customers = await this.invoiceService.getCustomers();
+  }
+
+  // Line items
+  get items(): FormArray {
     return this.invoiceForm.get('items') as FormArray;
   }
 
-  addItem() {
-    this.items.push(this.fb.group({
-      description: [''],
-      amount: [0]
-    }));
-    this.updateCalculations();
-  }
+addItem() {
+  const itemGroup = this.fb.group({
+    description: ['', Validators.required],
+    amount: [0, [Validators.required, Validators.min(0)]]
+  });
+  this.items.push(itemGroup);
+}
+
 
   removeItem(index: number) {
     this.items.removeAt(index);
-    this.updateCalculations();
   }
 
-  onLogoUpload(event: any) {
+  // Toggle add new customer form
+  toggleNewCustomer() {
+    this.showNewCustomer = !this.showNewCustomer;
+  }
+
+async saveNewCustomer() {
+  if (this.newCustomerForm.invalid) {
+    alert('Please fill in the customer name.');
+    return;
+  }
+
+  const customerData = this.newCustomerForm.value;
+
+  const customerId = await this.invoiceService.addCustomer(customerData);
+  await this.loadCustomers();
+  this.invoiceForm.patchValue({ customer: customerId });
+  this.showNewCustomer = false;
+  this.newCustomerForm.reset(); // Clear new customer form
+}
+
+
+  // File upload
+  async onLogoUpload(event: any) {
     this.logoFile = event.target.files[0];
   }
 
-  async saveInvoice() {
-    if (this.logoFile) {
-      const logoUrl = await this.invoiceService.uploadLogo(this.logoFile);
-      this.invoiceForm.patchValue({ logo: logoUrl });
-    }
-
-    await this.invoiceService.createInvoice({
-      ...this.invoiceForm.value,
-      subtotal: this.subtotal,
-      gst: this.gst,
-      total: this.total,
-      amountInWords: this.amountInWords
-    });
-
-    console.log('Invoice saved:', this.invoiceForm.value);
+async saveInvoice() {
+  if (this.logoFile) {
+    const logoUrl = await this.invoiceService.uploadLogo(this.logoFile);
+    this.invoiceForm.patchValue({ logo: logoUrl });
   }
 
-  // Real-time calculations
-  get subtotal() {
+  await this.invoiceService.createInvoice({
+    ...this.invoiceForm.value,
+    subtotal: this.subtotal,
+    gst: this.gst,
+    total: this.total,
+    amountInWords: this.amountInWords
+  });
+
+  alert('Invoice saved successfully!');
+
+  // Reset form and FormArray
+  this.invoiceForm.reset({
+    customer: '',
+    clientManager: '',
+    items: [],
+    logo: ''
+  });
+
+  this.items.clear();
+  this.addItem(); // Start fresh with one line item
+}
+
+
+  // Calculations
+  get subtotal(): number {
     return this.items.value.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
   }
 
-  get gst() {
+  get gst(): number {
     return this.subtotal * 0.18;
   }
 
-  get total() {
+  get total(): number {
     return this.subtotal + this.gst;
   }
 
-  get amountInWords() {
+  get amountInWords(): string {
     return this.numberToWords(this.total);
   }
 
-  updateCalculations() {
-    // Called after add/remove item to update totals
-  }
-
-  numberToWords(amount: number): string {
-    // Convert number to words (simplified example)
-    return 'One thousand rupees only';
-  }
-
-  // Add new customer (could be implemented later)
-  addNewCustomer() {
-    // e.g., this.router.navigate(['/add-customer']);
-  }
-  generatePDF() {
-  const doc = new jsPDF();
-
-  doc.text('Invoice', 10, 10);
-  doc.text(`Customer: ${this.invoiceForm.value.customer}`, 10, 20);
-  // ... Add more invoice details
-
-  doc.save('invoice.pdf');
+ numberToWords(amount: number): string {
+  if (amount === 0) return '';
+  return `${amount} rupees only`; // Replace with real logic if needed
 }
 
 }
