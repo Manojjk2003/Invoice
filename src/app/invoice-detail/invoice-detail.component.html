@@ -1,14 +1,14 @@
 <div class="invoice-detail-container" *ngIf="!isLoading && !errorMessage && invoice && customer">
   <header class="invoice-header">
-    <div class="logo-container" *ngIf="invoice.logo">
-      <img [src]="invoice.logo" alt="Company Logo" class="company-logo">
+    <div class="logo-container">
+      <!-- Always show default logo container; image itself will be from default path -->
+      <img [src]="defaultCompanyLogoUrl" alt="Company Logo" class="company-logo">
     </div>
     <div class="company-details">
-      <!-- You might want to make these configurable or part of settings -->
       <h2>INVOICE</h2>
-      <p><strong>Your Company Name</strong></p>
-      <p>123 Your Street, Your City, Your State, Your ZIP</p>
-      <p>your-email&#64;example.com | (555) 123-4567</p> <!-- Replaced @ with &#64; -->
+      <p><strong>{{ defaultCompanyName }}</strong></p>
+      <p>{{ defaultCompanyAddress }}</p>
+      <p>{{ defaultCompanyContact }}</p>
     </div>
   </header>
 

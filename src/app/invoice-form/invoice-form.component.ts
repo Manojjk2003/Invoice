@@ -17,7 +17,7 @@ export class InvoiceFormComponent implements OnInit {
   invoiceForm!: FormGroup;
   newCustomerForm!: FormGroup;
 
-  logoFile: File | null = null;
+  // logoFile: File | null = null; // Removed: Logo upload per invoice is removed
   customers: Customer[] = [];
   showNewCustomer = false;
 
@@ -39,7 +39,7 @@ export class InvoiceFormComponent implements OnInit {
       customer: ['', Validators.required], // Will store customer ID
       clientManager: ['', Validators.required],
       items: this.fb.array([]),
-      logo: [''] // Will store logo URL
+      // logo: [''] // Removed: Logo per invoice is handled by default now
     });
 
     this.newCustomerForm = this.fb.group({
@@ -118,17 +118,17 @@ export class InvoiceFormComponent implements OnInit {
     }
   }
 
-  onLogoUpload(event: Event) {
-    const element = event.currentTarget as HTMLInputElement;
-    const fileList: FileList | null = element.files;
-    if (fileList && fileList.length > 0) {
-      this.logoFile = fileList[0];
-      this.invoiceForm.patchValue({ logo: '' }); // Clear any previous logo URL if a new file is chosen
-      this.successMessage = `Selected logo: ${this.logoFile.name}`;
-    } else {
-      this.logoFile = null;
-    }
-  }
+  // onLogoUpload(event: Event) { // Removed
+  //   const element = event.currentTarget as HTMLInputElement;
+  //   const fileList: FileList | null = element.files;
+  //   if (fileList && fileList.length > 0) {
+  //     this.logoFile = fileList[0];
+  //     this.invoiceForm.patchValue({ logo: '' }); // Clear any previous logo URL if a new file is chosen
+  //     this.successMessage = `Selected logo: ${this.logoFile.name}`;
+  //   } else {
+  //     this.logoFile = null;
+  //   }
+  // }
 
   async saveInvoice() {
     if (this.invoiceForm.invalid) {
@@ -144,33 +144,34 @@ export class InvoiceFormComponent implements OnInit {
     this.isSavingInvoice = true;
     this.errorMessage = null;
     this.successMessage = null;
-    let logoUrl = this.invoiceForm.get('logo')?.value || '';
+    // let logoUrl = this.invoiceForm.get('logo')?.value || ''; // Logo URL is not set per invoice anymore
 
     try {
-      if (this.logoFile) {
-        logoUrl = await this.invoiceService.uploadLogo(this.logoFile);
-      }
+      // if (this.logoFile) { // Removed
+      //   logoUrl = await this.invoiceService.uploadLogo(this.logoFile);
+      // }
 
       const formValue = this.invoiceForm.value;
       const invoiceData: Omit<Invoice, 'id'> = {
         customer: formValue.customer, // This should be the customer ID string
         clientManager: formValue.clientManager,
         items: formValue.items as InvoiceItem[],
-        logo: logoUrl,
+        // logo: logoUrl, // Removed: Default logo will be used at display time
         subtotal: this.subtotal,
         gst: this.gst,
         total: this.total,
         amountInWords: this.amountInWords,
-        // invoiceNumber and date could be added here if needed
+        date: new Date(), // Set current date and time
+        // invoiceNumber: could be generated here or by the service/backend
         // customer: this.customers.find(c => c.id === formValue.customer) // Optionally embed customer object
       };
 
       await this.invoiceService.createInvoice(invoiceData);
       this.successMessage = 'Invoice saved successfully!';
-      this.invoiceForm.reset({ customer: '', clientManager: '', logo: '' });
+      this.invoiceForm.reset({ customer: '', clientManager: ''}); // Removed logo from reset
       this.items.clear();
       this.addItem(); // Add one fresh item
-      this.logoFile = null;
+      // this.logoFile = null; // Removed
       // Consider navigating away or showing a persistent success message
     } catch (error) {
       this.errorMessage = 'Failed to save invoice. Please try again.';

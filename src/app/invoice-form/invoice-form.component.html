@@ -5,12 +5,7 @@
   <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
   <form [formGroup]="invoiceForm" (ngSubmit)="saveInvoice()">
-    <!-- Logo upload -->
-    <div>
-      <label for="logoUpload">Upload Logo:</label>
-      <input type="file" id="logoUpload" (change)="onLogoUpload($event)" accept="image/*">
-      <small *ngIf="logoFile" class="form-text text-muted">Selected: {{ logoFile.name }}</small>
-    </div>
+    <!-- Logo upload section removed -->
 
     <!-- Customer selection -->
     <div>

@@ -21,6 +21,13 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   errorMessage: string | null = null;
   private routeSub!: Subscription;
 
+  // Default company information
+  defaultCompanyName = "Your Awesome Company"; // Placeholder, can be configured
+  defaultCompanyLogoUrl = "assets/images/default-logo.png"; // Path to default logo
+  defaultCompanyAddress = "123 Default Street, Default City, DS 12345";
+  defaultCompanyContact = "contact@awesomecompany.com | (555) 555-5555";
+
+
   constructor(
     private route: ActivatedRoute,
     private invoiceService: InvoiceService,
