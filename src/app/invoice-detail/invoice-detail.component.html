@@ -22,18 +22,20 @@
     </div>
     <div class="invoice-meta">
       <p><strong>Invoice Number:</strong> {{ invoice.invoiceNumber || invoice.id }}</p>
-      <p><strong>Date:</strong> {{ (invoice.date || invoice.id) | date:'longDate' }}</p> <!-- Assuming id might be a timestamp if date is missing -->
+      <p><strong>Date:</strong> {{ invoice.date | date:'longDate' }}</p>
+      <p *ngIf="invoice.dueDate"><strong>Due Date:</strong> {{ invoice.dueDate | date:'longDate' }}</p>
+      <p><strong>Status:</strong> <span class="status-{{invoice.paymentStatus | lowercase}}">{{ invoice.paymentStatus }}</span></p>
       <p *ngIf="invoice.clientManager"><strong>Client Manager:</strong> {{ invoice.clientManager }}</p>
     </div>
   </section>
 
   <section class="invoice-items">
-    <h3>Items:</h3>
+    <h3>Items</h3>
     <table>
       <thead>
         <tr>
           <th>Description</th>
-          <th>Amount</th>
+          <th class="amount-column">Amount</th>
         </tr>
       </thead>
       <tbody>
@@ -52,16 +54,39 @@
           <td class="amount">{{ invoice.gst | number:'1.2-2' }}</td>
         </tr>
         <tr>
-          <td class="text-right"><strong>Total:</strong></td>
+          <td class="text-right"><strong>Total Amount:</strong></td>
           <td class="amount"><strong>{{ invoice.total | number:'1.2-2' }}</strong></td>
+        </tr>
+        <tr>
+          <td class="text-right">Total Paid:</td>
+          <td class="amount">{{ invoice.totalPaid | number:'1.2-2' }}</td>
+        </tr>
+        <tr>
+          <td class="text-right"><strong>Balance Due:</strong></td>
+          <td class="amount"><strong>{{ (invoice.total - invoice.totalPaid) | number:'1.2-2' }}</strong></td>
         </tr>
       </tfoot>
     </table>
   </section>
 
   <section class="invoice-summary">
-    <p><strong>Amount in Words:</strong> {{ invoice.amountInWords }}</p>
+    <p><strong>Amount in Words (Total):</strong> {{ invoice.amountInWords }}</p>
   </section>
+
+  <section class="payment-history" *ngIf="payments.length > 0 || isLoadingPayments || paymentErrorMessage">
+    <h3>Payment History</h3>
+    <div *ngIf="isLoadingPayments" class="loading-message">Loading payment history...</div>
+    <div *ngIf="paymentErrorMessage" class="alert alert-warning">{{ paymentErrorMessage }}</div>
+    <ul *ngIf="!isLoadingPayments && payments.length > 0">
+      <li *ngFor="let payment of payments">
+        Paid {{ payment.amountPaid | number:'1.2-2' }} on {{ payment.paymentDate | date:'longDate' }}
+        <span *ngIf="payment.paymentMethod"> (Method: {{ payment.paymentMethod }})</span>
+        <em *ngIf="payment.notes"> - Notes: {{ payment.notes }}</em>
+      </li>
+    </ul>
+    <p *ngIf="!isLoadingPayments && payments.length === 0 && !paymentErrorMessage">No payments recorded for this invoice yet.</p>
+  </section>
+
 
   <footer>
     <p>Thank you for your business!</p>

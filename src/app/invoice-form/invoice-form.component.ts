@@ -152,7 +152,8 @@ export class InvoiceFormComponent implements OnInit {
       // }
 
       const formValue = this.invoiceForm.value;
-      const invoiceData: Omit<Invoice, 'id'> = {
+      // Adjust type to match what InvoiceService.createInvoice expects
+      const invoiceData: Omit<Invoice, 'id' | 'paymentStatus' | 'totalPaid'> = {
         customer: formValue.customer, // This should be the customer ID string
         clientManager: formValue.clientManager,
         items: formValue.items as InvoiceItem[],

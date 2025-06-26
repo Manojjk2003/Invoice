@@ -142,6 +142,60 @@ footer {
   background-color: #f2dede;
   border-color: #ebccd1;
 }
+.alert-warning { /* For paymentErrorMessage */
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+}
+
+
+/* Payment Status specific styling (similar to admin dashboard) */
+.status-unpaid {
+  color: #dc3545; /* Red */
+  font-weight: bold;
+}
+.status-partially {
+  color: #ffc107; /* Amber */
+  font-weight: bold;
+}
+.status-paid {
+  color: #28a745; /* Green */
+  font-weight: bold;
+}
+.status-overdue { /* If you implement overdue logic */
+  color: #ff7f50; /* Coral / Orange-Red */
+  font-weight: bold;
+}
+
+.amount-column { /* To align header for amount column */
+  text-align: right;
+}
+
+.payment-history {
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+.payment-history h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  color: #555;
+}
+.payment-history ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+.payment-history li {
+  padding: 5px 0;
+  font-size: 0.9em;
+  color: #333;
+  border-bottom: 1px dotted #eee;
+}
+.payment-history li:last-child {
+  border-bottom: none;
+}
+
 
 /* Print-specific styles */
 @media print {

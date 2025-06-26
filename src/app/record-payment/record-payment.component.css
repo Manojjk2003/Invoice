@@ -1,0 +1,128 @@
+/* Styles for RecordPaymentComponent modal */
+:host {
+  display: block; /* Needed for the modal structure to work if it's not inherently block by parent */
+  position: fixed; /* Or absolute, depending on parent context if not full screen */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000; /* Ensure it's on top */
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+  z-index: 1001;
+}
+
+.modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 1002;
+  width: 90%;
+  max-width: 500px; /* Max width of modal */
+  max-height: 90vh; /* Max height */
+  overflow-y: auto; /* Scroll if content exceeds max height */
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.modal-content p {
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.form-group input[type="date"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box; /* So padding doesn't increase width */
+  font-size: 0.95em;
+}
+.form-group input[type="number"] {
+  text-align: right;
+}
+
+
+.form-group textarea {
+  resize: vertical; /* Allow vertical resize, disable horizontal */
+}
+
+.text-danger {
+  color: #dc3545;
+  font-size: 0.8em;
+  margin-top: 3px;
+}
+
+.alert {
+  padding: 10px;
+  margin: 15px 0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.modal-actions button {
+  padding: 10px 15px;
+  margin-left: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95em;
+}
+
+.modal-actions button[type="submit"] {
+  background-color: #28a745; /* Green for primary action */
+  color: white;
+}
+.modal-actions button[type="submit"]:disabled {
+  background-color: #6c757d; /* Grey when disabled */
+}
+
+.modal-actions button[type="button"] {
+  background-color: #6c757d; /* Grey for cancel */
+  color: white;
+}
+.modal-actions button[type="button"]:disabled {
+  opacity: 0.7;
+}

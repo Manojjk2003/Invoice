@@ -17,11 +17,25 @@ export interface Invoice {
   customerId?: string; // Store ID explicitly if customer is an object
   clientManager: string;
   items: InvoiceItem[];
-  logo?: string;
+  logo?: string; // This might be deprecated if only default logo is used
   subtotal: number;
   gst: number;
   total: number;
   amountInWords: string;
   invoiceNumber?: string; // Usually generated or assigned
   date?: Date | string; // Or a Firestore Timestamp
+
+  // Fields for Payment Tracking
+  paymentStatus: 'Unpaid' | 'Partially Paid' | 'Paid' | 'Overdue';
+  totalPaid: number;
+  dueDate?: Date | string;
+}
+
+export interface Payment {
+  id?: string; // Firestore generated ID
+  invoiceId: string; // Foreign key to Invoice
+  paymentDate: Date | string; // Date of payment
+  amountPaid: number;
+  paymentMethod?: 'Cash' | 'Credit Card' | 'Bank Transfer' | 'Cheque' | 'Other';
+  notes?: string;
 }

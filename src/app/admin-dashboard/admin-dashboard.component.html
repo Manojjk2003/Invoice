@@ -2,6 +2,8 @@
 
 <div *ngIf="deleteSuccess" class="alert alert-success">{{ deleteSuccess }}</div>
 <div *ngIf="deleteError" class="alert alert-danger">{{ deleteError }}</div>
+<div *ngIf="paymentMessage" class="alert alert-info">{{ paymentMessage }}</div>
+
 
 <!-- List of Customers -->
 <section>
@@ -27,14 +29,16 @@
   <div *ngIf="invoiceError" class="alert alert-danger">{{ invoiceError }}</div>
   <ul *ngIf="!isLoadingInvoices && !invoiceError && invoices.length > 0">
     <li *ngFor="let invoice of invoices" class="invoice-item">
-      <span>
-        Invoice #{{ invoice.invoiceNumber || invoice.id }} -
-        Customer: {{ getCustomerName(invoice.customerId || invoice.customer) }} -
-        Total: {{ invoice.total | number:'1.2-2' }}
+      <span class="invoice-info">
+        Invoice #{{ invoice.invoiceNumber || invoice.id }} <br>
+        Customer: {{ getCustomerName(invoice.customerId || invoice.customer) }} <br>
+        Total: {{ invoice.total | number:'1.2-2' }} | Paid: {{ invoice.totalPaid | number:'1.2-2' }} | Status: <span class="status-{{invoice.paymentStatus | lowercase}}">{{ invoice.paymentStatus }}</span>
+        <span *ngIf="invoice.dueDate"> | Due: {{ invoice.dueDate | date:'shortDate' }}</span>
       </span>
       <div class="invoice-actions">
+        <button type="button" (click)="openRecordPaymentModal(invoice)" class="record-payment-button" *ngIf="invoice.paymentStatus !== 'Paid'">Record Payment</button>
         <a [routerLink]="['/invoice', invoice.id]" class="view-button">View</a>
-        <button (click)="deleteInvoice(invoice.id)" class="delete-button">Delete</button>
+        <button type="button" (click)="deleteInvoice(invoice.id)" class="delete-button">Delete</button>
       </div>
     </li>
   </ul>
@@ -42,3 +46,12 @@
     No invoices found.
   </div>
 </section>
+
+<app-record-payment
+  *ngIf="showRecordPaymentModal && selectedInvoiceForPayment"
+  [invoiceId]="selectedInvoiceForPayment.id!"
+  [invoiceTotal]="selectedInvoiceForPayment.total"
+  [totalPaidSoFar]="selectedInvoiceForPayment.totalPaid"
+  (paymentRecorded)="handlePaymentRecorded()"
+  (close)="closeRecordPaymentModal()">
+</app-record-payment>

@@ -1,11 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router'; // Added RouterLink
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 
 import { InvoiceService } from '../invoice-form/invoice.service';
 import { CustomerService } from '../customer.service';
-import { Invoice, Customer } from '../core/models/app.models';
+import { Invoice, Customer, Payment } from '../core/models/app.models'; // Import Payment
 
 @Component({
   selector: 'app-invoice-detail',
@@ -17,8 +17,11 @@ import { Invoice, Customer } from '../core/models/app.models';
 export class InvoiceDetailComponent implements OnInit, OnDestroy {
   invoice: Invoice | null = null;
   customer: Customer | null = null;
+  payments: Payment[] = []; // To store payments for this invoice
   isLoading = true;
+  isLoadingPayments = false; // Separate loading for payments
   errorMessage: string | null = null;
+  paymentErrorMessage: string | null = null; // Separate error message for payments
   private routeSub!: Subscription;
 
   // Default company information
@@ -77,7 +80,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         if (!this.customer) {
           this.errorMessage = `Customer details could not be loaded for this invoice.`;
         }
-
+        // After loading invoice, load its payments
+        this.loadPayments(invoiceId);
       } else {
         this.errorMessage = `Invoice with ID ${invoiceId} not found.`;
       }
@@ -85,7 +89,20 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       console.error('Error loading invoice details:', error);
       this.errorMessage = 'Failed to load invoice details. Please try again.';
     } finally {
-      this.isLoading = false;
+      this.isLoading = false; // Main invoice/customer loading done
+    }
+  }
+
+  async loadPayments(invoiceId: string): Promise<void> {
+    this.isLoadingPayments = true;
+    this.paymentErrorMessage = null;
+    try {
+      this.payments = await this.invoiceService.getPaymentsForInvoice(invoiceId);
+    } catch (error) {
+      console.error(`Error loading payments for invoice ${invoiceId}:`, error);
+      this.paymentErrorMessage = 'Failed to load payment history.';
+    } finally {
+      this.isLoadingPayments = false;
     }
   }
 

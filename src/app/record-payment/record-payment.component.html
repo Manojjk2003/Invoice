@@ -1,0 +1,49 @@
+<div class="modal-backdrop" (click)="closeModal()"></div>
+<div class="modal-content">
+  <h3>Record Payment for Invoice #{{ invoiceId }}</h3>
+  <p>Total Due: {{ invoiceTotal | number:'1.2-2' }} | Paid So Far: {{ totalPaidSoFar | number:'1.2-2' }} | Remaining: {{ remainingAmount | number:'1.2-2' }}</p>
+
+  <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="paymentDate">Payment Date:</label>
+      <input type="date" id="paymentDate" formControlName="paymentDate">
+      <div *ngIf="paymentForm.get('paymentDate')?.invalid && paymentForm.get('paymentDate')?.touched" class="text-danger">
+        Payment date is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="amountPaid">Amount Paid:</label>
+      <input type="number" id="amountPaid" formControlName="amountPaid" placeholder="0.00">
+      <div *ngIf="paymentForm.get('amountPaid')?.invalid && paymentForm.get('amountPaid')?.touched" class="text-danger">
+        <span *ngIf="paymentForm.get('amountPaid')?.errors?.['required']">Amount is required.</span>
+        <span *ngIf="paymentForm.get('amountPaid')?.errors?.['min']">Amount must be positive.</span>
+        <span *ngIf="paymentForm.get('amountPaid')?.errors?.['max']">Amount cannot exceed remaining balance ({{ remainingAmount | number:'1.2-2' }}).</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="paymentMethod">Payment Method:</label>
+      <select id="paymentMethod" formControlName="paymentMethod">
+        <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
+      </select>
+      <div *ngIf="paymentForm.get('paymentMethod')?.invalid && paymentForm.get('paymentMethod')?.touched" class="text-danger">
+        Payment method is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="notes">Notes (Optional):</label>
+      <textarea id="notes" formControlName="notes" rows="3"></textarea>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+    <div class="modal-actions">
+      <button type="submit" [disabled]="paymentForm.invalid || isSaving">
+        {{ isSaving ? 'Saving...' : 'Record Payment' }}
+      </button>
+      <button type="button" (click)="closeModal()" [disabled]="isSaving">Cancel</button>
+    </div>
+  </form>
+</div>

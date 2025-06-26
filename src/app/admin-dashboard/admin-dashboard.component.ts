@@ -1,14 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CustomerService } from '../customer.service';
-import { InvoiceService } from '../invoice-form/invoice.service'; // Corrected path
+import { InvoiceService } from '../invoice-form/invoice.service';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router'; // Import RouterLink
+import { RouterLink } from '@angular/router';
 import { Customer, Invoice } from '../core/models/app.models';
+import { RecordPaymentComponent } from '../record-payment/record-payment.component'; // Import RecordPaymentComponent
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink], // Add RouterLink here
+  imports: [CommonModule, RouterLink, RecordPaymentComponent], // Add RecordPaymentComponent
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
@@ -24,7 +25,10 @@ export class AdminDashboardComponent implements OnInit {
   invoiceError: string | null = null;
   deleteError: string | null = null;
   deleteSuccess: string | null = null;
+  paymentMessage: string | null = null; // For payment success/error messages
 
+  showRecordPaymentModal = false;
+  selectedInvoiceForPayment: Invoice | null = null;
 
   constructor(
     private customerService: CustomerService,
@@ -100,5 +104,26 @@ export class AdminDashboardComponent implements OnInit {
       return this.customerMap.get(customerId) || 'Unknown Customer';
     }
     return 'Invalid Customer Data';
+  }
+
+  openRecordPaymentModal(invoice: Invoice): void {
+    this.selectedInvoiceForPayment = invoice;
+    this.showRecordPaymentModal = true;
+    this.paymentMessage = null; // Clear previous messages
+    this.deleteSuccess = null; // Clear other messages too
+    this.deleteError = null;
+  }
+
+  closeRecordPaymentModal(): void {
+    this.showRecordPaymentModal = false;
+    this.selectedInvoiceForPayment = null;
+  }
+
+  handlePaymentRecorded(): void {
+    this.paymentMessage = 'Payment recorded successfully. Refreshing invoices...';
+    this.closeRecordPaymentModal();
+    this.loadInvoices(); // Refresh the invoice list to show updated status and totalPaid
+    // Clear the message after a few seconds
+    setTimeout(() => this.paymentMessage = null, 5000);
   }
 }

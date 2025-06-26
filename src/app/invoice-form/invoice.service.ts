@@ -1,24 +1,35 @@
 // src/app/invoice-form/invoice.service.ts
 import { Injectable } from '@angular/core';
-import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, CollectionReference, DocumentReference } from 'firebase/firestore';
+import {
+  collection, addDoc, getDocs, updateDoc, doc, deleteDoc, CollectionReference, DocumentReference,
+  query, where, writeBatch, getDoc, runTransaction
+} from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, getStorage, StorageReference } from 'firebase/storage';
-import { db } from '../../main'; // Firebase app storage is not directly used here, db is.
-import { Invoice } from '../core/models/app.models'; // Corrected path
+import { db } from '../../main';
+import { Invoice, Payment } from '../core/models/app.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InvoiceService {
   private invoicesRef: CollectionReference;
-  private storage = getStorage(); // Initialize Firebase Storage instance
+  private paymentsRef: CollectionReference;
+  private storage = getStorage();
 
   constructor() {
     this.invoicesRef = collection(db, 'invoices');
+    this.paymentsRef = collection(db, 'payments');
   }
 
-  async createInvoice(invoiceData: Omit<Invoice, 'id'>): Promise<string> {
+  async createInvoice(invoiceData: Omit<Invoice, 'id' | 'paymentStatus' | 'totalPaid'>): Promise<string> {
     try {
-      const docRef: DocumentReference = await addDoc(this.invoicesRef, invoiceData);
+      const fullInvoiceData: Omit<Invoice, 'id'> = {
+        ...invoiceData,
+        paymentStatus: 'Unpaid',
+        totalPaid: 0,
+        // dueDate can be set here if there's a default logic, e.g., net 30
+      };
+      const docRef: DocumentReference = await addDoc(this.invoicesRef, fullInvoiceData);
       return docRef.id;
     } catch (error) {
       console.error("Error creating invoice:", error);
@@ -68,6 +79,54 @@ export class InvoiceService {
       throw error;
     }
   }
-  
+
   // Removed addCustomer and getCustomers as they are consolidated in CustomerService
+
+  async recordPayment(paymentData: Omit<Payment, 'id'>): Promise<string> {
+    // For production, wrap the addPayment and updateInvoiceInTransaction in a single Firestore transaction
+    // to ensure atomicity. The current implementation does them sequentially.
+    try {
+      const paymentDocRef = await addDoc(this.paymentsRef, paymentData);
+
+      // Update the corresponding invoice
+      const invoiceRef = doc(this.invoicesRef, paymentData.invoiceId);
+      const invoiceSnap = await getDoc(invoiceRef);
+
+      if (!invoiceSnap.exists()) {
+        throw new Error(`Invoice with ID ${paymentData.invoiceId} not found.`);
+      }
+
+      const invoice = invoiceSnap.data() as Invoice;
+      const newTotalPaid = (invoice.totalPaid || 0) + paymentData.amountPaid;
+      let newPaymentStatus: Invoice['paymentStatus'] = 'Partially Paid';
+
+      if (newTotalPaid >= invoice.total) {
+        newPaymentStatus = 'Paid';
+      } else if (newTotalPaid === 0) {
+        newPaymentStatus = 'Unpaid'; // Should not happen if adding payment, but good for completeness
+      }
+      // Overdue status would need to be checked against dueDate, potentially by a separate process or on load.
+
+      await updateDoc(invoiceRef, {
+        totalPaid: newTotalPaid,
+        paymentStatus: newPaymentStatus
+      });
+
+      return paymentDocRef.id;
+    } catch (error) {
+      console.error("Error recording payment:", error);
+      throw error;
+    }
+  }
+
+  async getPaymentsForInvoice(invoiceId: string): Promise<Payment[]> {
+    try {
+      const q = query(this.paymentsRef, where("invoiceId", "==", invoiceId));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Payment));
+    } catch (error) {
+      console.error(`Error fetching payments for invoice ${invoiceId}:`, error);
+      throw error;
+    }
+  }
 }
