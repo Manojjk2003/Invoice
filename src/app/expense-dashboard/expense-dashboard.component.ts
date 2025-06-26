@@ -30,7 +30,15 @@ export class ExpenseDashboardComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = null;
     try {
-      this.expenses = await this.expenseService.getExpenses();
+      const fetchedExpenses = await this.expenseService.getExpenses();
+      this.expenses = fetchedExpenses.map(exp => {
+        // Ensure date is a JavaScript Date object for the DatePipe
+        const dateValue = exp.date as any;
+        return {
+          ...exp,
+          date: dateValue && dateValue.toDate ? dateValue.toDate() : new Date(dateValue)
+        };
+      });
     } catch (error) {
       this.errorMessage = 'Failed to load expenses.';
       console.error('Error loading expenses:', error);

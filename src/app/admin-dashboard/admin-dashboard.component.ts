@@ -72,11 +72,22 @@ export class AdminDashboardComponent implements OnInit {
           this.customerMap.set(customer.id, customer.name);
         }
         // Find invoices for the current customer
-        const customerInvoices = invoices.filter(
-          inv => (inv.customerId === customer.id) ||
-                 (typeof inv.customer === 'object' && inv.customer?.id === customer.id) ||
-                 (typeof inv.customer === 'string' && inv.customer === customer.id)
-        );
+        // Find invoices for the current customer and convert their dates
+        const customerInvoices = invoices
+          .filter(
+            inv => (inv.customerId === customer.id) ||
+                   (typeof inv.customer === 'object' && inv.customer?.id === customer.id) ||
+                   (typeof inv.customer === 'string' && inv.customer === customer.id)
+          )
+          .map(inv => {
+            const invDate = inv.date as any;
+            const invDueDate = inv.dueDate as any;
+            return {
+              ...inv,
+              date: invDate && invDate.toDate ? invDate.toDate() : new Date(invDate),
+              dueDate: invDueDate && invDueDate.toDate ? invDueDate.toDate() : (invDueDate ? new Date(invDueDate) : undefined)
+            };
+          });
         this.groupedCustomerData.push({ ...customer, invoices: customerInvoices });
       });
 

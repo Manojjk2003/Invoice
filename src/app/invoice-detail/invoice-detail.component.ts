@@ -70,9 +70,19 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       // This is a simplification due to current service limitations.
 
       const invoices = await this.invoiceService.getInvoices(); // Inefficient
-      const foundInvoice = invoices.find(inv => inv.id === invoiceId);
+      // Removed duplicate declaration of 'invoices'
+      let foundInvoice = invoices.find(inv => inv.id === invoiceId);
 
       if (foundInvoice) {
+        // Convert dates in foundInvoice
+        const invDate = foundInvoice.date as any;
+        foundInvoice.date = invDate && invDate.toDate ? invDate.toDate() : new Date(invDate);
+
+        if (foundInvoice.dueDate) {
+          const invDueDate = foundInvoice.dueDate as any;
+          foundInvoice.dueDate = invDueDate && invDueDate.toDate ? invDueDate.toDate() : new Date(invDueDate);
+        }
+
         this.invoice = foundInvoice;
         const customerIdToFetch = this.invoice.customerId || (typeof this.invoice.customer === 'string' ? this.invoice.customer : null);
 
@@ -104,7 +114,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.isLoadingPayments = true;
     this.paymentErrorMessage = null;
     try {
-      this.payments = await this.invoiceService.getPaymentsForInvoice(invoiceId);
+      const fetchedPayments = await this.invoiceService.getPaymentsForInvoice(invoiceId);
+      this.payments = fetchedPayments.map(p => {
+        const paymentDateValue = p.paymentDate as any;
+        return {
+          ...p,
+          paymentDate: paymentDateValue && paymentDateValue.toDate ? paymentDateValue.toDate() : new Date(paymentDateValue)
+        };
+      });
     } catch (error) {
       console.error(`Error loading payments for invoice ${invoiceId}:`, error);
       this.paymentErrorMessage = 'Failed to load payment history.';
