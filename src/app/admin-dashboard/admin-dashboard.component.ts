@@ -4,20 +4,27 @@ import { InvoiceService } from '../invoice-form/invoice.service';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Customer, Invoice } from '../core/models/app.models';
-import { RecordPaymentComponent } from '../record-payment/record-payment.component'; // Import RecordPaymentComponent
+import { RecordPaymentComponent } from '../record-payment/record-payment.component';
+
+// Moved CustomerWithInvoices interface definition here, before the component decorator
+export interface CustomerWithInvoices extends Customer {
+  invoices: Invoice[];
+}
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, RecordPaymentComponent], // Add RecordPaymentComponent
+  imports: [CommonModule, RouterLink, RecordPaymentComponent],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
 export class AdminDashboardComponent implements OnInit {
-  customers: Customer[] = [];
-  invoices: Invoice[] = [];
+  // customers: Customer[] = []; // Will be part of groupedData
+  // invoices: Invoice[] = []; // Will be part of groupedData
 
-  private customerMap = new Map<string, string>();
+  groupedCustomerData: CustomerWithInvoices[] = [];
+
+  private customerMap = new Map<string, string>(); // Still useful for getCustomerName if needed elsewhere
 
   isLoadingCustomers = false;
   isLoadingInvoices = false;
@@ -26,6 +33,7 @@ export class AdminDashboardComponent implements OnInit {
   deleteError: string | null = null;
   deleteSuccess: string | null = null;
   paymentMessage: string | null = null; // For payment success/error messages
+  customerDeleteMessage: string | null = null; // For customer delete success/error
 
   showRecordPaymentModal = false;
   selectedInvoiceForPayment: Invoice | null = null;
@@ -36,44 +44,53 @@ export class AdminDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.loadCustomers();
-    this.loadInvoices();
+    this.loadInitialData();
   }
 
-  async loadCustomers() {
+  async loadInitialData() {
     this.isLoadingCustomers = true;
+    this.isLoadingInvoices = true; // Both start loading
     this.customerError = null;
+    this.invoiceError = null;
+    this.groupedCustomerData = [];
+    this.customerMap.clear();
+
     try {
-      this.customers = await this.customerService.getCustomers();
-      this.customerMap.clear();
-      this.customers.forEach(customer => {
+      // Fetch customers and invoices in parallel
+      const [customers, invoices] = await Promise.all([
+        this.customerService.getCustomers(),
+        this.invoiceService.getInvoices()
+      ]);
+
+      customers.forEach(customer => {
         if (customer.id) {
           this.customerMap.set(customer.id, customer.name);
         }
+        // Find invoices for the current customer
+        const customerInvoices = invoices.filter(
+          inv => (inv.customerId === customer.id) ||
+                 (typeof inv.customer === 'object' && inv.customer?.id === customer.id) ||
+                 (typeof inv.customer === 'string' && inv.customer === customer.id)
+        );
+        this.groupedCustomerData.push({ ...customer, invoices: customerInvoices });
       });
+
+      // If there are invoices without a matching customer (e.g. customer deleted, bad data)
+      // We could list them under an "Unassigned Invoices" group if needed. For now, they are ignored.
+
     } catch (error) {
-      this.customerError = 'Failed to load customers.';
-      console.error('Error loading customers:', error);
+      console.error('Error loading admin data:', error);
+      // Set a generic error or specific ones if distinguishable
+      this.customerError = 'Failed to load customer or invoice data.';
+      this.invoiceError = 'Failed to load customer or invoice data.';
     } finally {
       this.isLoadingCustomers = false;
-    }
-  }
-
-  async loadInvoices() {
-    // Ensure customers are loaded first or handle data display if not.
-    // For simplicity, we assume loadCustomers is called and populates the map.
-    // A more robust solution might involve Promise.all in ngOnInit or chaining.
-    this.isLoadingInvoices = true;
-    this.invoiceError = null;
-    try {
-      this.invoices = await this.invoiceService.getInvoices();
-    } catch (error) {
-      this.invoiceError = 'Failed to load invoices.';
-      console.error('Error loading invoices:', error);
-    } finally {
       this.isLoadingInvoices = false;
     }
   }
+
+  // loadCustomers() and loadInvoices() are now part of loadInitialData()
+  // If individual refresh is needed later, they can be refactored.
 
   async deleteInvoice(id: string | undefined) {
     if (!id) {
@@ -88,9 +105,9 @@ export class AdminDashboardComponent implements OnInit {
 
     try {
       await this.invoiceService.deleteInvoice(id);
-      this.deleteSuccess = `Invoice (ID: ${id}) deleted successfully. Refreshing list...`;
-      // Refresh invoices list
-      await this.loadInvoices();
+      this.deleteSuccess = `Invoice (ID: ${id}) deleted successfully. Refreshing data...`;
+      // Refresh grouped data list
+      await this.loadInitialData();
     } catch (error) {
       this.deleteError = `Failed to delete invoice (ID: ${id}). Please try again.`;
       console.error('Error deleting invoice:', error);
@@ -120,10 +137,40 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   handlePaymentRecorded(): void {
-    this.paymentMessage = 'Payment recorded successfully. Refreshing invoices...';
+    this.paymentMessage = 'Payment recorded successfully. Refreshing data...';
     this.closeRecordPaymentModal();
-    this.loadInvoices(); // Refresh the invoice list to show updated status and totalPaid
+    this.loadInitialData(); // Refresh the entire grouped data structure
     // Clear the message after a few seconds
     setTimeout(() => this.paymentMessage = null, 5000);
+  }
+
+  async confirmDeleteCustomer(customer: Customer): Promise<void> {
+    if (!customer.id) {
+      this.customerDeleteMessage = "Error: Customer ID is missing.";
+      setTimeout(() => this.customerDeleteMessage = null, 5000);
+      return;
+    }
+
+    const confirmation = confirm(`Are you sure you want to delete customer "${customer.name}"? This action cannot be undone.`);
+    if (confirmation) {
+      this.customerDeleteMessage = null; // Clear previous messages
+      this.deleteSuccess = null;
+      this.deleteError = null;
+      this.paymentMessage = null;
+      try {
+        await this.customerService.deleteCustomer(customer.id);
+        this.customerDeleteMessage = `Customer "${customer.name}" deleted successfully. Refreshing data...`;
+        await this.loadInitialData(); // Refresh the entire grouped data structure
+      } catch (error: any) {
+        if (error.message?.startsWith('CUSTOMER_HAS_INVOICES:')) {
+          this.customerDeleteMessage = error.message.replace('CUSTOMER_HAS_INVOICES: ', '');
+        } else {
+          this.customerDeleteMessage = `Error deleting customer "${customer.name}". Please try again.`;
+          console.error(`Error deleting customer ${customer.id}:`, error);
+        }
+      } finally {
+        setTimeout(() => this.customerDeleteMessage = null, 7000); // Longer timeout for this message
+      }
+    }
   }
 }

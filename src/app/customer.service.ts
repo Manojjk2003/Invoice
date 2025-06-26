@@ -1,14 +1,19 @@
 import { Injectable } from '@angular/core';
-import { collection, addDoc, getDocs, query, where, DocumentReference, CollectionReference, QuerySnapshot } from 'firebase/firestore';
+import {
+  collection, addDoc, getDocs, query, where, deleteDoc, doc,
+  DocumentReference, CollectionReference, QuerySnapshot
+} from 'firebase/firestore';
 import { db } from '../main';
 import { Customer } from './core/models/app.models';
 
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
   private customersRef: CollectionReference;
+  private invoicesRef: CollectionReference; // For checking associated invoices
 
   constructor() {
     this.customersRef = collection(db, 'customers');
+    this.invoicesRef = collection(db, 'invoices'); // Initialize invoices collection reference
   }
 
   async getCustomers(): Promise<Customer[]> {
@@ -44,6 +49,33 @@ export class CustomerService {
         console.error("Error adding customer:", error);
       }
       throw error; // Re-throw the error to be handled by the caller
+    }
+  }
+
+  async deleteCustomer(customerId: string): Promise<void> {
+    try {
+      // Check if the customer has any associated invoices
+      // The 'customer' field in 'invoices' collection might store customer ID or an object.
+      // We need to be flexible. Let's assume 'customerId' field exists for linking.
+      // If 'customer' field could also be an object with an 'id' subfield, the query would be more complex.
+      // For now, assuming invoices have a direct `customerId` field matching the customer's ID.
+      const invoicesQuery = query(this.invoicesRef, where("customerId", "==", customerId));
+      const invoicesSnapshot = await getDocs(invoicesQuery);
+
+      if (!invoicesSnapshot.empty) {
+        throw new Error(`CUSTOMER_HAS_INVOICES: This customer cannot be deleted because they have ${invoicesSnapshot.size} associated invoice(s).`);
+      }
+
+      // No associated invoices, proceed with deletion
+      const customerDocRef = doc(this.customersRef, customerId);
+      await deleteDoc(customerDocRef);
+    } catch (error: any) {
+      if (error.message?.startsWith('CUSTOMER_HAS_INVOICES:')) {
+        console.warn(error.message);
+      } else {
+        console.error(`Error deleting customer ${customerId}:`, error);
+      }
+      throw error; // Re-throw all errors to be handled by the caller
     }
   }
 }

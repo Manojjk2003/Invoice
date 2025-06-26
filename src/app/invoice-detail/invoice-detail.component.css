@@ -129,6 +129,15 @@ footer {
   background-color: #138496;
 }
 
+.send-reminder-button {
+  background-color: #ffc107; /* Amber */
+  color: #212529; /* Dark text for contrast */
+  border: none;
+}
+.send-reminder-button:hover {
+  background-color: #e0a800;
+}
+
 
 .back-button {
   background-color: #6c757d; /* Grey for back button */

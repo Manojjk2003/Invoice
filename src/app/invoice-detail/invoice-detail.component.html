@@ -94,6 +94,12 @@
   </footer>
 
   <div class="actions">
+    <button type="button"
+            *ngIf="invoice && customer && customer.email && (invoice.paymentStatus === 'Unpaid' || invoice.paymentStatus === 'Partially Paid' || invoice.paymentStatus === 'Overdue')"
+            (click)="sendReminder()"
+            class="send-reminder-button">
+      Send Payment Reminder
+    </button>
     <button type="button" (click)="downloadInvoiceAsPdf()" class="download-pdf-button">Download PDF</button>
     <button type="button" (click)="printInvoice()" class="print-button">Print View</button> <!-- Kept print for current view -->
     <a routerLink="/admin" class="back-button">Back to Admin Dashboard</a>

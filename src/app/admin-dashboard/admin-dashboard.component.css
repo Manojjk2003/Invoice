@@ -11,10 +11,26 @@ li {
 }
 
 /* Customer list specific */
-section:first-of-type li { /* Assuming first section is customers */
+.customer-item {
   background-color: #f9f9f9;
   border: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
+.customer-info {
+  flex-grow: 1;
+  line-height: 1.5;
+}
+.customer-info small {
+  display: block; /* Or inline-block with margin for better spacing if needed */
+  font-size: 0.85em;
+  color: #555;
+}
+.customer-actions {
+  margin-left: 15px;
+}
+
 
 /* Invoice item specific styling */
 .invoice-item {
@@ -121,4 +137,47 @@ section:first-of-type li { /* Assuming first section is customers */
 }
 .record-payment-button:hover {
   background-color: #e0a800;
+}
+
+/* Styles for grouped display */
+.customer-invoice-listing {
+  margin-top: 20px;
+}
+
+.customer-group {
+  margin-bottom: 25px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+.customer-group .customer-item {
+  /* background-color: #e9ecef; /* Slightly different bg for customer header within group */
+  /* border-bottom: 2px solid #ccc; */
+  margin-bottom: 10px; /* Space between customer header and their invoice list */
+}
+
+.invoice-list-for-customer {
+  margin-top: 10px;
+  padding-left: 20px; /* Indent invoice list under customer */
+}
+
+.invoice-list-for-customer h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.1em;
+  color: #333;
+}
+
+.invoice-list-for-customer .invoice-item {
+  background-color: #fdfdfe; /* Slightly different from general invoice item if needed */
+  border-color: #e9ecef;
+  padding: 6px 8px; /* Slightly smaller padding for nested items */
+}
+
+.no-invoices-message {
+  font-style: italic;
+  color: #666;
+  padding-left: 20px;
 }

@@ -1,51 +1,60 @@
 <h2>Admin Dashboard</h2>
 
-<div *ngIf="deleteSuccess" class="alert alert-success">{{ deleteSuccess }}</div>
-<div *ngIf="deleteError" class="alert alert-danger">{{ deleteError }}</div>
+<div *ngIf="deleteSuccess" class="alert alert-success">{{ deleteSuccess }}</div> <!-- For invoice delete -->
+<div *ngIf="deleteError" class="alert alert-danger">{{ deleteError }}</div> <!-- For invoice delete -->
 <div *ngIf="paymentMessage" class="alert alert-info">{{ paymentMessage }}</div>
+<div *ngIf="customerDeleteMessage"
+     [ngClass]="{'alert-success': customerDeleteMessage.includes('successfully'), 'alert-danger': customerDeleteMessage.includes('Error') || customerDeleteMessage.includes('cannot be deleted')}"
+     class="alert">
+     {{ customerDeleteMessage }}
+</div>
 
+<!-- Combined Customer and Invoice List -->
+<section class="customer-invoice-listing">
+  <h3>Customer Overview & Invoices</h3>
 
-<!-- List of Customers -->
-<section>
-  <h3>Customers</h3>
-  <div *ngIf="isLoadingCustomers" class="loading-message">Loading customers...</div>
+  <div *ngIf="isLoadingCustomers || isLoadingInvoices" class="loading-message">Loading data...</div>
   <div *ngIf="customerError" class="alert alert-danger">{{ customerError }}</div>
-  <ul *ngIf="!isLoadingCustomers && !customerError && customers.length > 0">
-    <li *ngFor="let customer of customers">
-      <strong>{{ customer.name }}</strong>
-      <small *ngIf="customer.contact"> - Contact: {{ customer.contact }}</small>
-      <small *ngIf="customer.gst"> - GST: {{ customer.gst }}</small>
-    </li>
-  </ul>
-  <div *ngIf="!isLoadingCustomers && !customerError && customers.length === 0">
+  <!-- customerError will show if either customers or invoices fail in loadInitialData -->
+
+  <div *ngIf="!isLoadingCustomers && !isLoadingInvoices && !customerError && groupedCustomerData.length === 0">
     No customers found.
   </div>
-</section>
 
-<!-- List of Invoices -->
-<section>
-  <h3>Invoices</h3>
-  <div *ngIf="isLoadingInvoices" class="loading-message">Loading invoices...</div>
-  <div *ngIf="invoiceError" class="alert alert-danger">{{ invoiceError }}</div>
-  <ul *ngIf="!isLoadingInvoices && !invoiceError && invoices.length > 0">
-    <li *ngFor="let invoice of invoices" class="invoice-item">
-      <span class="invoice-info">
-        Invoice #{{ invoice.invoiceNumber || invoice.id }} <br>
-        Customer: {{ getCustomerName(invoice.customerId || invoice.customer) }} <br>
-        Total: {{ invoice.total | number:'1.2-2' }} | Paid: {{ invoice.totalPaid | number:'1.2-2' }} | Status: <span class="status-{{invoice.paymentStatus | lowercase}}">{{ invoice.paymentStatus }}</span>
-        <span *ngIf="invoice.dueDate"> | Due: {{ invoice.dueDate | date:'shortDate' }}</span>
+  <div *ngFor="let group of groupedCustomerData" class="customer-group">
+    <div class="customer-item">
+      <span class="customer-info">
+        <strong>{{ group.name }}</strong>
+        <small *ngIf="group.email"> - Email: {{ group.email }}</small>
+        <small *ngIf="group.phone"> - Phone: {{ group.phone }}</small>
+        <small *ngIf="group.contact"> - Contact Person: {{ group.contact }}</small>
+        <small *ngIf="group.gst"> - GST: {{ group.gst }}</small>
       </span>
-      <div class="invoice-actions">
-        <button type="button" (click)="openRecordPaymentModal(invoice)" class="record-payment-button" *ngIf="invoice.paymentStatus !== 'Paid'">Record Payment</button>
-        <a [routerLink]="['/invoice', invoice.id]" class="view-button">View</a>
-        <button type="button" (click)="deleteInvoice(invoice.id)" class="delete-button">Delete</button>
+      <div class="customer-actions">
+        <button type="button" (click)="confirmDeleteCustomer(group)" class="delete-button">Delete Customer</button>
       </div>
-    </li>
-  </ul>
-  <div *ngIf="!isLoadingInvoices && !invoiceError && invoices.length === 0">
-    No invoices found.
+    </div>
+
+    <ul *ngIf="group.invoices.length > 0" class="invoice-list-for-customer">
+      <h4>Invoices for {{ group.name }}:</h4>
+      <li *ngFor="let invoice of group.invoices" class="invoice-item">
+        <span class="invoice-info">
+          Invoice #{{ invoice.invoiceNumber || invoice.id }} <br>
+          Total: {{ invoice.total | number:'1.2-2' }} | Paid: {{ invoice.totalPaid | number:'1.2-2' }} |
+          Status: <span class="status-{{invoice.paymentStatus | lowercase}}">{{ invoice.paymentStatus }}</span>
+          <span *ngIf="invoice.dueDate"> | Due: {{ invoice.dueDate | date:'shortDate' }}</span>
+        </span>
+        <div class="invoice-actions">
+          <button type="button" (click)="openRecordPaymentModal(invoice)" class="record-payment-button" *ngIf="invoice.paymentStatus !== 'Paid'">Record Payment</button>
+          <a [routerLink]="['/invoice', invoice.id]" class="view-button">View Invoice</a>
+          <button type="button" (click)="deleteInvoice(invoice.id)" class="delete-button">Delete Invoice</button>
+        </div>
+      </li>
+    </ul>
+    <p *ngIf="group.invoices.length === 0" class="no-invoices-message">No invoices for this customer.</p>
   </div>
 </section>
+
 
 <app-record-payment
   *ngIf="showRecordPaymentModal && selectedInvoiceForPayment"

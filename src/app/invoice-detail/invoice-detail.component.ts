@@ -291,4 +291,36 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     doc.save(`Invoice-${this.invoice.invoiceNumber || this.invoice.id}.pdf`);
   }
+
+  sendReminder(): void {
+    if (!this.invoice || !this.customer || !this.customer.email) {
+      alert('Customer email or invoice details are missing. Cannot send reminder.');
+      return;
+    }
+
+    const invoiceNumber = this.invoice.invoiceNumber || this.invoice.id;
+    const totalAmount = this.decimalPipe.transform(this.invoice.total, '1.2-2') || 'N/A';
+    const dueDate = this.invoice.dueDate ? (this.datePipe.transform(this.invoice.dueDate, 'longDate') || 'N/A') : 'N/A';
+
+    const subject = `Payment Reminder: Invoice #${invoiceNumber}`;
+    const body = `Dear ${this.customer.name},\n\n` +
+                 `This is a friendly reminder regarding Invoice #${invoiceNumber} for a total amount of ${totalAmount}.\n` +
+                 (dueDate !== 'N/A' ? `This invoice was due on ${dueDate}.\n\n` : `Please find the details attached or contact us for more information.\n\n`) +
+                 `Your prompt payment would be greatly appreciated.\n\n` +
+                 `Thank you,\n` +
+                 `${this.defaultCompanyName}`;
+
+    const mailtoLink = `mailto:${this.customer.email}` +
+                       `?subject=${encodeURIComponent(subject)}` +
+                       `&body=${encodeURIComponent(body)}`;
+
+    // Check if window is defined (for SSR or testing environments)
+    if (typeof window !== 'undefined') {
+      window.location.href = mailtoLink;
+    } else {
+      console.warn('Cannot open mailto link: window object is not available.');
+      // Provide feedback that mailto link could not be opened automatically
+      alert('Could not automatically open email client. Please manually send a reminder to ' + this.customer.email);
+    }
+  }
 }
