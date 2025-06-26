@@ -1,0 +1,56 @@
+<div class="expense-dashboard-container">
+  <h2>Expense Dashboard</h2>
+
+  <div *ngIf="actionMessage"
+       [ngClass]="{'alert-success': actionMessage.includes('successfully'), 'alert-danger': actionMessage.includes('Error')}"
+       class="alert">
+       {{ actionMessage }}
+  </div>
+
+  <button type="button" (click)="openAddExpenseForm()" class="add-expense-btn">Add New Expense</button>
+
+  <div *ngIf="isLoading" class="loading-message">Loading expenses...</div>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+  <div *ngIf="!isLoading && !errorMessage && expenses.length === 0" class="no-expenses-message">
+    No expenses recorded yet. Click "Add New Expense" to start.
+  </div>
+
+  <table *ngIf="!isLoading && !errorMessage && expenses.length > 0" class="expenses-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Vendor</th>
+        <th class="amount-column">Amount</th>
+        <th>Receipt</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let expense of expenses">
+        <td>{{ expense.date | date:'mediumDate' }}</td>
+        <td>{{ expense.category }}</td>
+        <td>{{ expense.description }}</td>
+        <td>{{ expense.vendor || 'N/A' }}</td>
+        <td class="amount-column">{{ expense.amount | currency:'USD':'symbol':'1.2-2' }}</td>
+        <td>
+          <a *ngIf="expense.receiptUrl" [href]="expense.receiptUrl" target="_blank" rel="noopener noreferrer">View Receipt</a>
+          <span *ngIf="!expense.receiptUrl">N/A</span>
+        </td>
+        <td class="actions-column">
+          <button type="button" (click)="openEditExpenseForm(expense)" class="edit-btn">Edit</button>
+          <button type="button" (click)="confirmDeleteExpense(expense)" class="delete-btn">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-expense-form
+  *ngIf="showExpenseForm"
+  [expenseToEdit]="expenseToEdit"
+  (expenseSaved)="handleExpenseSaved()"
+  (close)="closeExpenseForm()">
+</app-expense-form>

@@ -41,3 +41,14 @@ export interface Payment {
   paymentMethod?: 'Cash' | 'Credit Card' | 'Bank Transfer' | 'Cheque' | 'Other';
   notes?: string;
 }
+
+export interface Expense {
+  id?: string; // Firestore generated ID
+  date: Date | string; // Date of the expense - required
+  category: string; // Expense category (e.g., Travel, Office Supplies) - required
+  description: string; // Detailed description of the expense - required
+  amount: number; // Amount of the expense - required, positive value
+  vendor?: string; // Optional: Name of the vendor or place of purchase
+  receiptUrl?: string; // Optional: URL to an uploaded receipt image/PDF
+  // userId?: string; // Optional: If implementing multi-user system later
+}

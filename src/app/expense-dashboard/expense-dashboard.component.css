@@ -1,0 +1,120 @@
+/* Styles for ExpenseDashboardComponent */
+.expense-dashboard-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.expense-dashboard-container h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.add-expense-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+  margin-bottom: 20px;
+}
+.add-expense-btn:hover {
+  background-color: #0056b3;
+}
+
+.loading-message, .no-expenses-message {
+  text-align: center;
+  padding: 20px;
+  color: #555;
+  font-style: italic;
+}
+
+.alert {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  text-align: center;
+}
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+
+.expenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.expenses-table th, .expenses-table td {
+  border: 1px solid #ddd;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.9em;
+  vertical-align: middle;
+}
+
+.expenses-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+  color: #333;
+}
+
+.expenses-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+.expenses-table tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.expenses-table .amount-column {
+  text-align: right;
+}
+
+.expenses-table .actions-column {
+  text-align: center;
+  white-space: nowrap; /* Prevent buttons from wrapping */
+}
+
+.expenses-table .actions-column .edit-btn,
+.expenses-table .actions-column .delete-btn {
+  padding: 5px 10px;
+  margin: 0 3px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: white;
+}
+
+.expenses-table .actions-column .edit-btn {
+  background-color: #28a745; /* Green */
+}
+.expenses-table .actions-column .edit-btn:hover {
+  background-color: #218838;
+}
+
+.expenses-table .actions-column .delete-btn {
+  background-color: #dc3545; /* Red */
+}
+.expenses-table .actions-column .delete-btn:hover {
+  background-color: #c82333;
+}
+
+.expenses-table a {
+    color: #007bff;
+    text-decoration: none;
+}
+.expenses-table a:hover {
+    text-decoration: underline;
+}
