@@ -34,7 +34,7 @@
         <td>{{ expense.category }}</td>
         <td>{{ expense.description }}</td>
         <td>{{ expense.vendor || 'N/A' }}</td>
-        <td class="amount-column">{{ expense.amount | currency:'USD':'symbol':'1.2-2' }}</td>
+        <td class="amount-column">{{ expense.amount | currency:(expense.currency || 'USD') }}</td> <!-- Use expense.currency -->
         <td>
           <a *ngIf="expense.receiptUrl" [href]="expense.receiptUrl" target="_blank" rel="noopener noreferrer">View Receipt</a>
           <span *ngIf="!expense.receiptUrl">N/A</span>

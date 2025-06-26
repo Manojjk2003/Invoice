@@ -13,6 +13,25 @@ export interface InvoiceItem {
   amount: number;
 }
 
+// Currency Definitions
+export type CurrencyCode = 'USD' | 'INR' | 'EUR' | 'GBP'; // Add more as needed
+
+export interface Currency {
+  code: CurrencyCode;
+  symbol: string;
+  name: string;
+}
+
+export const SUPPORTED_CURRENCIES: Currency[] = [
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' }
+];
+
+export const DEFAULT_CURRENCY_CODE: CurrencyCode = 'INR';
+
+
 // Define available template IDs
 export type InvoiceTemplateId = 'classic' | 'modern' | 'simple';
 
@@ -45,11 +64,13 @@ export interface Invoice {
 
   // Template Selection
   templateId?: InvoiceTemplateId;
+  currency: CurrencyCode; // Added: Currency for this invoice
 }
 
 export interface Payment {
   id?: string; // Firestore generated ID
   invoiceId: string; // Foreign key to Invoice
+  // currency?: CurrencyCode; // Optional: If payments can be in different currency than invoice
   paymentDate: Date | string; // Date of payment
   amountPaid: number;
   paymentMethod?: 'Cash' | 'Credit Card' | 'Bank Transfer' | 'Cheque' | 'Other';
@@ -62,6 +83,7 @@ export interface Expense {
   category: string; // Expense category (e.g., Travel, Office Supplies) - required
   description: string; // Detailed description of the expense - required
   amount: number; // Amount of the expense - required, positive value
+  currency: CurrencyCode; // Added: Currency for this expense
   vendor?: string; // Optional: Name of the vendor or place of purchase
   receiptUrl?: string; // Optional: URL to an uploaded receipt image/PDF
   // userId?: string; // Optional: If implementing multi-user system later

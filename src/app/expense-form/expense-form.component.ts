@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, OnChanges, Output, SimpleChange
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ExpenseService } from '../expense.service';
-import { Expense } from '../core/models/app.models';
+import { Expense, Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE } from '../core/models/app.models'; // Import currency models
 
 @Component({
   selector: 'app-expense-form',
@@ -25,6 +25,7 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
 
   // Example categories, could be fetched from a service or be a constant
   expenseCategories: string[] = ['Office Supplies', 'Travel', 'Software', 'Utilities', 'Meals', 'Marketing', 'Other'];
+  supportedCurrencies: Currency[] = SUPPORTED_CURRENCIES;
 
   constructor(
     private fb: FormBuilder,
@@ -61,6 +62,7 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
       category: [this.expenseToEdit?.category || this.expenseCategories[0], Validators.required],
       description: [this.expenseToEdit?.description || '', Validators.required],
       amount: [this.expenseToEdit?.amount || null, [Validators.required, Validators.min(0.01)]],
+      currency: [this.expenseToEdit?.currency || DEFAULT_CURRENCY_CODE, Validators.required], // Added currency
       vendor: [this.expenseToEdit?.vendor || ''],
       receipt: [null] // For the file input, not directly part of Expense model
     });
@@ -128,6 +130,7 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
         category: formValue.category,
         description: formValue.description,
         amount: Number(formValue.amount),
+        currency: formValue.currency, // Add currency to payload
       };
 
       if (formValue.vendor) {
@@ -138,7 +141,9 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
       }
 
       // Now cast to the correct type for the service call
+      // The type Omit<Expense, 'id'> already includes 'currency' due to model changes
       const expenseData: Omit<Expense, 'id'> = expensePayload as Omit<Expense, 'id'>;
+
 
       if (this.expenseToEdit && this.expenseToEdit.id) {
         // Update existing expense

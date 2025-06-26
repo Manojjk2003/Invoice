@@ -43,7 +43,7 @@
       <li *ngFor="let invoice of group.invoices" class="invoice-item">
         <span class="invoice-info">
           Invoice #{{ invoice.invoiceNumber || invoice.id }} <br>
-          Total: {{ invoice.total | number:'1.2-2' }} | Paid: {{ invoice.totalPaid | number:'1.2-2' }} |
+          Total: {{ invoice.total | currency:(invoice.currency || defaultCurrencyCode) }} | Paid: {{ invoice.totalPaid | currency:(invoice.currency || defaultCurrencyCode) }} |
           Status: <span class="status-{{invoice.paymentStatus | lowercase}}">{{ invoice.paymentStatus }}</span>
           <span *ngIf="invoice.dueDate"> | Due: {{ invoice.dueDate | date:'shortDate' }}</span>
         </span>

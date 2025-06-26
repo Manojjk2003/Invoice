@@ -39,6 +39,18 @@
     </div>
 
     <div class="form-group">
+      <label for="expenseCurrency">Currency:</label>
+      <select id="expenseCurrency" formControlName="currency">
+        <option *ngFor="let currencyOpt of supportedCurrencies" [value]="currencyOpt.code">
+          {{ currencyOpt.name }} ({{ currencyOpt.symbol }})
+        </option>
+      </select>
+      <div *ngIf="expenseForm.get('currency')?.invalid && expenseForm.get('currency')?.touched" class="text-danger">
+        Currency is required.
+      </div>
+    </div>
+
+    <div class="form-group">
       <label for="expenseVendor">Vendor (Optional):</label>
       <input type="text" id="expenseVendor" formControlName="vendor" placeholder="Vendor name">
     </div>

@@ -6,7 +6,11 @@ import jsPDF from 'jspdf';
 
 import { InvoiceService } from '../invoice-form/invoice.service';
 import { CustomerService } from '../customer.service';
-import { Invoice, Customer, Payment, InvoiceItem, DEFAULT_TEMPLATE_ID, InvoiceTemplateId } from '../core/models/app.models'; // Added DEFAULT_TEMPLATE_ID
+import {
+  Invoice, Customer, Payment, InvoiceItem,
+  DEFAULT_TEMPLATE_ID, InvoiceTemplateId,
+  CurrencyCode, DEFAULT_CURRENCY_CODE, SUPPORTED_CURRENCIES // Added currency models
+} from '../core/models/app.models';
 
 // Removed SimpleDatePipe
 
@@ -36,7 +40,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   defaultCompanyLogoUrl = "assets/images/default-logo.png";
   defaultCompanyAddress = "123 Default Street, Default City, DS 12345";
   defaultCompanyContact = "contact@awesomecompany.com | (555) 555-5555";
-  defaultTemplateId: InvoiceTemplateId = DEFAULT_TEMPLATE_ID; // For fallback in template class binding
+  defaultTemplateId: InvoiceTemplateId = DEFAULT_TEMPLATE_ID;
+  defaultCurrencyCode: CurrencyCode = DEFAULT_CURRENCY_CODE; // For fallback in template/PDF
 
 
   constructor(
@@ -150,7 +155,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     const doc = new jsPDF();
     const pageHeight = doc.internal.pageSize.height;
-    let currentY = 20; // Initial Y position, renamed for clarity
+    let currentY = 20;
     const lineSpacing = 7;
     const sectionSpacing = 10;
     const leftMargin = 15;
@@ -186,6 +191,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       headerFont = 'courier';
       bodyFont = 'courier';
     }
+
+    const currentInvoiceCurrencyCode = this.invoice.currency || this.defaultCurrencyCode;
+    const currencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === currentInvoiceCurrencyCode);
+    const currencySymbol = currencyInfo ? currencyInfo.symbol : currentInvoiceCurrencyCode;
+
 
     // --- Header ---
     doc.setFontSize(18);
@@ -267,7 +277,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
           itemContentY = checkPageBreak(itemContentY);
           doc.text(line, descriptionX, itemContentY);
       });
-      doc.text(this.decimalPipe.transform(item.amount, '1.2-2') || '0.00', amountX, currentY, {align: 'right'});
+      doc.text(currencySymbol + (this.decimalPipe.transform(item.amount, '1.2-2') || '0.00'), amountX, currentY, {align: 'right'});
       currentY = Math.max(currentY, itemContentY) + lineSpacing;
     });
     doc.setDrawColor(templateId === 'modern' ? primaryColor : '#cccccc');
@@ -280,7 +290,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         localY = checkPageBreak(localY);
         doc.setFont(bodyFont, isBold ? 'bold' : 'normal');
         doc.text(label, amountX - itemAmountColWidth, localY, { align: 'right' });
-        doc.text(typeof value === 'number' ? (this.decimalPipe.transform(value, '1.2-2') || '0.00') : value, amountX, localY, { align: 'right' });
+        const formattedValue = typeof value === 'number' ? (this.decimalPipe.transform(value, '1.2-2') || '0.00') : value;
+        doc.text(currencySymbol + formattedValue, amountX, localY, { align: 'right' });
         return localY + lineSpacing;
     };
 
@@ -291,7 +302,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     doc.setFont(bodyFont, 'bold'); // Balance due always bold
     if (templateId === 'modern') doc.setTextColor(primaryColor);
     currentY = addTotalLine('Balance Due:', this.invoice.total - this.invoice.totalPaid, currentY, true);
-    doc.setTextColor(0,0,0);
+    doc.setTextColor(0,0,0); // Reset text color after potentially changing it for modern balance due
     currentY = checkPageBreak(currentY);
     currentY += sectionSpacing;
 
@@ -312,7 +323,8 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
         doc.setFont(bodyFont, 'normal');
         this.payments.forEach(p => {
             currentY = checkPageBreak(currentY, lineSpacing * 2);
-            let paymentLine = `Paid ${this.decimalPipe.transform(p.amountPaid, '1.2-2') || '0.00'} on ${this.datePipe.transform(p.paymentDate, 'mediumDate') || ''}`;
+            // Assuming payments are in the same currency as the invoice for this basic implementation
+            let paymentLine = `Paid ${currencySymbol}${this.decimalPipe.transform(p.amountPaid, '1.2-2') || '0.00'} on ${this.datePipe.transform(p.paymentDate, 'mediumDate') || ''}`;
             if (p.paymentMethod) paymentLine += ` (Method: ${p.paymentMethod})`;
             currentY = addText(paymentLine, leftMargin, currentY);
             if (p.notes) {

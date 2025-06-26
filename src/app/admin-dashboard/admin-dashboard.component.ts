@@ -3,9 +3,9 @@ import { CustomerService } from '../customer.service';
 import { InvoiceService } from '../invoice-form/invoice.service';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Customer, Invoice } from '../core/models/app.models';
+import { Customer, Invoice, CurrencyCode, DEFAULT_CURRENCY_CODE } from '../core/models/app.models'; // Import currency models
 import { RecordPaymentComponent } from '../record-payment/record-payment.component';
-import { EditCustomerComponent } from '../edit-customer/edit-customer.component'; // Import EditCustomerComponent
+import { EditCustomerComponent } from '../edit-customer/edit-customer.component';
 
 // Moved CustomerWithInvoices interface definition here, before the component decorator
 export interface CustomerWithInvoices extends Customer {
@@ -42,6 +42,8 @@ export class AdminDashboardComponent implements OnInit {
 
   showEditCustomerModal = false;
   selectedCustomerForEdit: Customer | null = null;
+
+  defaultCurrencyCode: CurrencyCode = DEFAULT_CURRENCY_CODE; // For template fallback
 
   constructor(
     private customerService: CustomerService,

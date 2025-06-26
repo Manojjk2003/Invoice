@@ -4,7 +4,11 @@ import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
 import { InvoiceService } from './invoice.service';
 import { CustomerService } from '../customer.service';
-import { Customer, Invoice, InvoiceItem, InvoiceTemplate, InvoiceTemplateId, DEFAULT_TEMPLATE_ID } from '../core/models/app.models'; // Import template models
+import {
+  Customer, Invoice, InvoiceItem,
+  InvoiceTemplate, InvoiceTemplateId, DEFAULT_TEMPLATE_ID,
+  Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE
+} from '../core/models/app.models'; // Import currency models
 
 @Component({
   standalone: true,
@@ -34,6 +38,8 @@ export class InvoiceFormComponent implements OnInit {
     { id: 'simple', name: 'Simple' }
   ];
 
+  supportedCurrencies: Currency[] = SUPPORTED_CURRENCIES;
+
   constructor(
     private fb: FormBuilder,
     private invoiceService: InvoiceService,
@@ -44,7 +50,8 @@ export class InvoiceFormComponent implements OnInit {
     this.invoiceForm = this.fb.group({
       customer: ['', Validators.required],
       clientManager: ['', Validators.required],
-      templateId: [DEFAULT_TEMPLATE_ID, Validators.required], // Added templateId FormControl
+      templateId: [DEFAULT_TEMPLATE_ID, Validators.required],
+      currency: [DEFAULT_CURRENCY_CODE, Validators.required], // Added currency FormControl
       items: this.fb.array([]),
     });
 
@@ -174,7 +181,8 @@ export class InvoiceFormComponent implements OnInit {
       const invoiceData: Omit<Invoice, 'id' | 'paymentStatus' | 'totalPaid'> = {
         customer: formValue.customer,
         clientManager: formValue.clientManager,
-        templateId: formValue.templateId, // Include templateId
+        templateId: formValue.templateId,
+        currency: formValue.currency, // Include currency
         items: formValue.items as InvoiceItem[],
         subtotal: this.subtotal,
         gst: this.gst,
@@ -188,7 +196,8 @@ export class InvoiceFormComponent implements OnInit {
       this.invoiceForm.reset({
         customer: '',
         clientManager: '',
-        templateId: DEFAULT_TEMPLATE_ID // Reset templateId to default
+        templateId: DEFAULT_TEMPLATE_ID,
+        currency: DEFAULT_CURRENCY_CODE // Reset currency to default
       });
       this.items.clear();
       this.addItem();

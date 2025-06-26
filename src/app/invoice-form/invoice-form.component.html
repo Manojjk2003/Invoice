@@ -118,6 +118,19 @@
       </div>
     </div>
 
+    <!-- Currency Selection -->
+    <div>
+      <label for="currency">Currency:</label>
+      <select id="currency" formControlName="currency">
+        <option *ngFor="let currencyOpt of supportedCurrencies" [value]="currencyOpt.code">
+          {{ currencyOpt.name }} ({{ currencyOpt.symbol }})
+        </option>
+      </select>
+      <div *ngIf="invoiceForm.get('currency')?.invalid && invoiceForm.get('currency')?.touched" class="text-danger">
+        Currency selection is required.
+      </div>
+    </div>
+
     <!-- Calculations -->
     <div class="calculations">
       <h4>Summary</h4>
