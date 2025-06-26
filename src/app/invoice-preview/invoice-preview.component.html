@@ -1,0 +1,65 @@
+<div class="invoice-container">
+  <h1>Invoice</h1>
+
+  <div class="details">
+    <!-- Invoiced To (Customer Details) -->
+    <div class="invoiced-to">
+      <h3>Invoiced To</h3>
+      <p>{{ invoice.customerName }}</p>
+      <p>{{ invoice.customerAddress }}</p>
+      <p>GST No: {{ invoice.customerGST }}</p>
+    </div>
+
+    <!-- Invoiced By (Your Company Fixed Details) -->
+    <div class="invoiced-by">
+      <h3>Invoiced By</h3>
+      <p>Subhanu Technologies and Solutions Pvt. Ltd.</p>
+      <p>507/7, 39th Cross, 16th Main, 4th T Block, Jayanagar, Bangalore 560041</p>
+      <p>GST No: 29AEBPG1439G12D</p>
+      <p>LUT: A020293509151RSP</p>
+    </div>
+  </div>
+
+  <div class="invoice-meta">
+    <p><strong>Invoice No:</strong> {{ invoice.invoiceNumber }}</p>
+    <p><strong>Date:</strong> {{ invoice.invoiceDate | date }}</p>
+    <p><strong>Client Manager:</strong> {{ invoice.clientManager }}</p>
+  </div>
+
+  <table class="invoice-table">
+    <thead>
+      <tr>
+        <th>SL.No.</th>
+        <th>Description</th>
+        <th>Amount INR</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>{{ invoice.description }}</td>
+        <td>₹{{ invoice.amount }}</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>18% GST</td>
+        <td>₹{{ invoice.gst }}</td>
+      </tr>
+      <tr>
+        <td colspan="2"><strong>Total</strong></td>
+        <td>₹{{ invoice.total }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="bank-details">
+    <h3>Bank Details</h3>
+    <p><strong>Account Name:</strong> SUBHANU TECHNOLOGIES AND SOLUTIONS PVT LTD</p>
+    <p><strong>Account Number:</strong> 40014084583</p>
+    <p><strong>IFSC Code:</strong> SBIN0011588</p>
+    <p><strong>Bank Name:</strong> State Bank of India</p>
+    <p><strong>Branch:</strong> Jayanagar 8th Block, Bangalore</p>
+  </div>
+
+  <p class="footer">This is a system-generated invoice. Does not require signature.</p>
+</div>

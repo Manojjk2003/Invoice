@@ -36,7 +36,7 @@ export class InvoiceFormComponent implements OnInit {
       customer: ['', Validators.required],
       clientManager: ['', Validators.required],
       items: this.fb.array([]),
-      logo: ['']
+      logo: [''],
     });
 
     this.newCustomerForm = this.fb.group({
@@ -96,8 +96,9 @@ async saveNewCustomer() {
 
   // File upload
   async onLogoUpload(event: any) {
-    this.logoFile = event.target.files[0];
-  }
+  this.logoFile = event.target.files[0];
+  console.log('Selected file:', this.logoFile);
+}
 
 async saveInvoice() {
   if (this.logoFile) {

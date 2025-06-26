@@ -1,0 +1,42 @@
+.invoice-container {
+  max-width: 800px;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.details {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.invoice-meta {
+  margin-bottom: 20px;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoice-table th,
+.invoice-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.invoice-table th {
+  background-color: #f4f4f4;
+}
+
+.bank-details {
+  margin-top: 20px;
+}
+
+.footer {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #777;
+}

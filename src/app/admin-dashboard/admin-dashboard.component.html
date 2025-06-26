@@ -10,9 +10,33 @@
 
 <!-- List of Invoices -->
 <h3>Invoices</h3>
-<ul>
-  <li *ngFor="let invoice of invoices">
-    Invoice #{{ invoice.invoiceNumber }} - {{ invoice.total }}
-    <button (click)="deleteInvoice(invoice.id)">Delete</button>
-  </li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th>Invoice Number</th>
+      <th>Customer</th>
+      <th>Total</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let invoice of invoices">
+      <td>{{ invoice.invoiceNumber || generateInvoiceNumber(invoice.id) }}</td>
+      <td>{{ invoice.customer }}</td>
+      <td>₹{{ invoice.total }}</td>
+      <td>
+        <button (click)="viewInvoice(invoice)">View</button>
+        <button (click)="deleteInvoice(invoice.id)">Delete</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- Invoice Preview Modal -->
+<div class="invoice-modal" *ngIf="selectedInvoice">
+  <div class="invoice-modal-content">
+    <button class="close-button" (click)="closeInvoice()">X</button>
+    <app-invoice-preview [invoice]="selectedInvoice"></app-invoice-preview>
+  </div>
+</div>
