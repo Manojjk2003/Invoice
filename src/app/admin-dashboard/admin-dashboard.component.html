@@ -1,18 +1,41 @@
 <h2>Admin Dashboard</h2>
 
+<div *ngIf="deleteSuccess" class="alert alert-success">{{ deleteSuccess }}</div>
+<div *ngIf="deleteError" class="alert alert-danger">{{ deleteError }}</div>
+
 <!-- List of Customers -->
-<h3>Customers</h3>
-<ul>
-  <li *ngFor="let customer of customers">
-    {{ customer.name }} - {{ customer.contact }}
-  </li>
-</ul>
+<section>
+  <h3>Customers</h3>
+  <div *ngIf="isLoadingCustomers" class="loading-message">Loading customers...</div>
+  <div *ngIf="customerError" class="alert alert-danger">{{ customerError }}</div>
+  <ul *ngIf="!isLoadingCustomers && !customerError && customers.length > 0">
+    <li *ngFor="let customer of customers">
+      <strong>{{ customer.name }}</strong>
+      <small *ngIf="customer.contact"> - Contact: {{ customer.contact }}</small>
+      <small *ngIf="customer.gst"> - GST: {{ customer.gst }}</small>
+    </li>
+  </ul>
+  <div *ngIf="!isLoadingCustomers && !customerError && customers.length === 0">
+    No customers found.
+  </div>
+</section>
 
 <!-- List of Invoices -->
-<h3>Invoices</h3>
-<ul>
-  <li *ngFor="let invoice of invoices">
-    Invoice #{{ invoice.invoiceNumber }} - {{ invoice.total }}
-    <button (click)="deleteInvoice(invoice.id)">Delete</button>
-  </li>
-</ul>
+<section>
+  <h3>Invoices</h3>
+  <div *ngIf="isLoadingInvoices" class="loading-message">Loading invoices...</div>
+  <div *ngIf="invoiceError" class="alert alert-danger">{{ invoiceError }}</div>
+  <ul *ngIf="!isLoadingInvoices && !invoiceError && invoices.length > 0">
+    <li *ngFor="let invoice of invoices" class="invoice-item">
+      <span>
+        Invoice #{{ invoice.invoiceNumber || invoice.id }} -
+        Customer ID: {{ invoice.customerId || (invoice.customer | json) }} -
+        Total: {{ invoice.total | number:'1.2-2' }}
+      </span>
+      <button (click)="deleteInvoice(invoice.id)" class="delete-button">Delete</button>
+    </li>
+  </ul>
+  <div *ngIf="!isLoadingInvoices && !invoiceError && invoices.length === 0">
+    No invoices found.
+  </div>
+</section>

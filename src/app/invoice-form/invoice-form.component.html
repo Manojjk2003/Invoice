@@ -1,52 +1,107 @@
 <div class="invoice-form">
   <h2>Create Invoice</h2>
 
-  <form [formGroup]="invoiceForm">
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+  <form [formGroup]="invoiceForm" (ngSubmit)="saveInvoice()">
     <!-- Logo upload -->
-    <label for="logoUpload">Upload Logo</label>
-    <input type="file" id="logoUpload" (change)="onLogoUpload($event)">
+    <div>
+      <label for="logoUpload">Upload Logo:</label>
+      <input type="file" id="logoUpload" (change)="onLogoUpload($event)" accept="image/*">
+      <small *ngIf="logoFile" class="form-text text-muted">Selected: {{ logoFile.name }}</small>
+    </div>
 
     <!-- Customer selection -->
-    <select formControlName="customer">
-      <option value="" disabled>Select a customer</option>
-      <option *ngFor="let customer of customers" [value]="customer.id">{{ customer.name }}</option>
-    </select>
+    <div>
+      <label for="customer">Customer:</label>
+      <select id="customer" formControlName="customer">
+        <option value="" disabled>Select a customer</option>
+        <option *ngIf="isLoadingCustomers" value="" disabled>Loading customers...</option>
+        <option *ngFor="let customer of customers" [value]="customer.id">{{ customer.name }}</option>
+      </select>
+      <div *ngIf="invoiceForm.get('customer')?.invalid && invoiceForm.get('customer')?.touched" class="text-danger">
+        Customer is required.
+      </div>
+    </div>
 
-    <button type="button" (click)="toggleNewCustomer()">Add New Customer</button>
+    <button type="button" (click)="toggleNewCustomer()">
+      {{ showNewCustomer ? 'Cancel Adding Customer' : 'Add New Customer' }}
+    </button>
 
     <!-- New Customer Fields (optional) -->
-  <div *ngIf="showNewCustomer" [formGroup]="newCustomerForm">
-  <h3>New Customer Details</h3>
-  <input formControlName="name" placeholder="Name">
-  <input formControlName="address" placeholder="Address">
-  <input formControlName="gst" placeholder="GST Number">
-  <input formControlName="contact" placeholder="Contact Number">
-  <button type="button" (click)="saveNewCustomer()">Save Customer</button>
-</div>
-
+    <div *ngIf="showNewCustomer" class="new-customer-form" [formGroup]="newCustomerForm">
+      <h3>New Customer Details</h3>
+      <div>
+        <label for="newCustomerName">Name:</label>
+        <input id="newCustomerName" formControlName="name" placeholder="Name">
+        <div *ngIf="newCustomerForm.get('name')?.invalid && newCustomerForm.get('name')?.touched" class="text-danger">
+          Name is required.
+        </div>
+      </div>
+      <div>
+        <label for="newCustomerAddress">Address:</label>
+        <input id="newCustomerAddress" formControlName="address" placeholder="Address">
+      </div>
+      <div>
+        <label for="newCustomerGst">GST Number:</label>
+        <input id="newCustomerGst" formControlName="gst" placeholder="GST Number">
+      </div>
+      <div>
+        <label for="newCustomerContact">Contact Number:</label>
+        <input id="newCustomerContact" formControlName="contact" placeholder="Contact Number">
+      </div>
+      <button type="button" (click)="saveNewCustomer()" [disabled]="isSavingCustomer || newCustomerForm.invalid">
+        {{ isSavingCustomer ? 'Saving...' : 'Save Customer' }}
+      </button>
+    </div>
 
     <!-- Line items -->
+    <h3>Invoice Items</h3>
     <div formArrayName="items">
-      <div *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
-        <input formControlName="description" placeholder="Description">
-        <input type="number" formControlName="amount" placeholder="Amount">
-        <button type="button" (click)="removeItem(i)">Remove</button>
+      <div *ngFor="let item of items.controls; let i = index" [formGroupName]="i" class="item-row">
+        <div>
+          <label for="itemDescription{{i}}">Description:</label>
+          <input id="itemDescription{{i}}" formControlName="description" placeholder="Item description">
+          <div *ngIf="items.controls[i].get('description')?.invalid && items.controls[i].get('description')?.touched" class="text-danger">
+            Description is required.
+          </div>
+        </div>
+        <div>
+          <label for="itemAmount{{i}}">Amount:</label>
+          <input id="itemAmount{{i}}" type="number" formControlName="amount" placeholder="Amount">
+           <div *ngIf="items.controls[i].get('amount')?.invalid && items.controls[i].get('amount')?.touched" class="text-danger">
+            Valid amount is required (min 0.01).
+          </div>
+        </div>
+        <button type="button" (click)="removeItem(i)" class="remove-item-btn">Remove Item</button>
+      </div>
+       <div *ngIf="items.length === 0 && invoiceForm.touched" class="text-danger">
+        At least one item is required.
       </div>
     </div>
     <button type="button" (click)="addItem()">Add Item</button>
 
     <!-- Client Manager -->
-    <label for="clientManager">Client Manager</label>
-    <input formControlName="clientManager" placeholder="Client Manager">
-
-    <!-- Calculations -->
     <div>
-      <p>Subtotal: {{ subtotal }}</p>
-      <p>GST (18%): {{ gst }}</p>
-      <p>Total: {{ total }}</p>
-      <p>Amount in Words: {{ amountInWords }}</p>
+      <label for="clientManager">Client Manager:</label>
+      <input id="clientManager" formControlName="clientManager" placeholder="Client Manager">
+      <div *ngIf="invoiceForm.get('clientManager')?.invalid && invoiceForm.get('clientManager')?.touched" class="text-danger">
+        Client Manager is required.
+      </div>
     </div>
 
-    <button type="button" (click)="saveInvoice()">Save Invoice</button>
+    <!-- Calculations -->
+    <div class="calculations">
+      <h4>Summary</h4>
+      <p>Subtotal: {{ subtotal | number:'1.2-2' }}</p>
+      <p>GST ({{gstRate * 100}}%): {{ gst | number:'1.2-2' }}</p>
+      <p><strong>Total: {{ total | number:'1.2-2' }}</strong></p>
+      <p><small>Amount in Words: {{ amountInWords }}</small></p>
+    </div>
+
+    <button type="submit" [disabled]="isSavingInvoice || invoiceForm.invalid || items.length === 0">
+      {{ isSavingInvoice ? 'Saving Invoice...' : 'Save Invoice' }}
+    </button>
   </form>
 </div>
