@@ -35,16 +35,35 @@
         </div>
       </div>
       <div>
+        <label for="newCustomerEmail">Email:</label>
+        <input id="newCustomerEmail" type="email" formControlName="email" placeholder="customer@example.com">
+        <div *ngIf="newCustomerForm.get('email')?.invalid && newCustomerForm.get('email')?.touched" class="text-danger">
+          <span *ngIf="newCustomerForm.get('email')?.errors?.['required']">Email is required.</span>
+          <span *ngIf="newCustomerForm.get('email')?.errors?.['email']">Invalid email format.</span>
+          <span *ngIf="newCustomerForm.get('email')?.errors?.['duplicate']">This email address is already registered.</span>
+        </div>
+      </div>
+      <div>
         <label for="newCustomerAddress">Address:</label>
         <input id="newCustomerAddress" formControlName="address" placeholder="Address">
       </div>
       <div>
-        <label for="newCustomerGst">GST Number:</label>
-        <input id="newCustomerGst" formControlName="gst" placeholder="GST Number">
+        <label for="newCustomerPhone">Phone (10 digits):</label>
+        <input id="newCustomerPhone" type="tel" formControlName="phone" placeholder="e.g., 9876543210">
+        <div *ngIf="newCustomerForm.get('phone')?.invalid && newCustomerForm.get('phone')?.touched" class="text-danger">
+          Invalid phone number (must be 10 digits).
+        </div>
       </div>
       <div>
-        <label for="newCustomerContact">Contact Number:</label>
-        <input id="newCustomerContact" formControlName="contact" placeholder="Contact Number">
+        <label for="newCustomerGst">GST Number (15 chars):</label>
+        <input id="newCustomerGst" formControlName="gst" placeholder="e.g., 22AAAAA0000A1Z5">
+        <div *ngIf="newCustomerForm.get('gst')?.invalid && newCustomerForm.get('gst')?.touched" class="text-danger">
+          Invalid GSTIN (must be 15 alphanumeric characters).
+        </div>
+      </div>
+      <div>
+        <label for="newCustomerContact">Contact Person (Optional):</label>
+        <input id="newCustomerContact" formControlName="contact" placeholder="Contact person name">
       </div>
       <button type="button" (click)="saveNewCustomer()" [disabled]="isSavingCustomer || newCustomerForm.invalid">
         {{ isSavingCustomer ? 'Saving...' : 'Save Customer' }}

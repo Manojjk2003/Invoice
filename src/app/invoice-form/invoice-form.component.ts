@@ -44,9 +44,15 @@ export class InvoiceFormComponent implements OnInit {
 
     this.newCustomerForm = this.fb.group({
       name: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
       address: [''],
-      gst: [''],
-      contact: ['']
+      // Indian GSTIN: 15 alphanumeric characters.
+      // Format: 2 state code digits, 10 PAN chars, 1 entity code, 1 checksum char 'Z', 1 checksum digit/char.
+      // Simple pattern: /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
+      // For simplicity, a less strict pattern for now, can be refined.
+      gst: ['', [Validators.pattern(/^[a-zA-Z0-9]{15}$/)]],
+      phone: ['', [Validators.pattern(/^\d{10}$/)]], // Simple 10-digit phone number
+      contact: [''] // General contact person, no specific validation here
     });
 
     this.loadCustomers();
@@ -110,9 +116,15 @@ export class InvoiceFormComponent implements OnInit {
       this.showNewCustomer = false;
       this.newCustomerForm.reset();
       this.successMessage = 'New customer saved successfully!';
-    } catch (error) {
-      this.errorMessage = 'Failed to save new customer. Please try again.';
-      console.error('Error saving new customer:', error);
+    } catch (error: any) {
+      if (error.message?.startsWith('DUPLICATE_EMAIL:')) {
+        this.errorMessage = error.message.replace('DUPLICATE_EMAIL: ', ''); // Show specific duplicate message
+        // Optionally, mark the email field as invalid
+        this.newCustomerForm.get('email')?.setErrors({ duplicate: true });
+      } else {
+        this.errorMessage = 'Failed to save new customer. Please try again.';
+        console.error('Error saving new customer:', error);
+      }
     } finally {
       this.isSavingCustomer = false;
     }
