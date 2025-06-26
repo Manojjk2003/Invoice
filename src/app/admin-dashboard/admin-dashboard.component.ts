@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Customer, Invoice } from '../core/models/app.models';
 import { RecordPaymentComponent } from '../record-payment/record-payment.component';
+import { EditCustomerComponent } from '../edit-customer/edit-customer.component'; // Import EditCustomerComponent
 
 // Moved CustomerWithInvoices interface definition here, before the component decorator
 export interface CustomerWithInvoices extends Customer {
@@ -14,7 +15,7 @@ export interface CustomerWithInvoices extends Customer {
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, RecordPaymentComponent],
+  imports: [CommonModule, RouterLink, RecordPaymentComponent, EditCustomerComponent], // Add EditCustomerComponent
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
@@ -34,9 +35,13 @@ export class AdminDashboardComponent implements OnInit {
   deleteSuccess: string | null = null;
   paymentMessage: string | null = null; // For payment success/error messages
   customerDeleteMessage: string | null = null; // For customer delete success/error
+  customerUpdateMessage: string | null = null; // For customer update success
 
   showRecordPaymentModal = false;
   selectedInvoiceForPayment: Invoice | null = null;
+
+  showEditCustomerModal = false;
+  selectedCustomerForEdit: Customer | null = null;
 
   constructor(
     private customerService: CustomerService,
@@ -172,5 +177,27 @@ export class AdminDashboardComponent implements OnInit {
         setTimeout(() => this.customerDeleteMessage = null, 7000); // Longer timeout for this message
       }
     }
+  }
+
+  openEditCustomerModal(customer: Customer): void {
+    this.selectedCustomerForEdit = { ...customer }; // Pass a copy to avoid unintended two-way binding issues
+    this.showEditCustomerModal = true;
+    this.customerUpdateMessage = null; // Clear previous messages
+    this.customerDeleteMessage = null;
+    this.paymentMessage = null;
+    this.deleteError = null;
+    this.deleteSuccess = null;
+  }
+
+  closeEditCustomerModal(): void {
+    this.showEditCustomerModal = false;
+    this.selectedCustomerForEdit = null;
+  }
+
+  handleCustomerUpdated(): void {
+    this.customerUpdateMessage = 'Customer details updated successfully. Refreshing data...';
+    this.closeEditCustomerModal();
+    this.loadInitialData(); // Refresh the entire grouped data structure
+    setTimeout(() => this.customerUpdateMessage = null, 5000);
   }
 }

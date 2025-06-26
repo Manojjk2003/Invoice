@@ -8,6 +8,8 @@
      class="alert">
      {{ customerDeleteMessage }}
 </div>
+<div *ngIf="customerUpdateMessage" class="alert alert-success">{{ customerUpdateMessage }}</div>
+
 
 <!-- Combined Customer and Invoice List -->
 <section class="customer-invoice-listing">
@@ -31,7 +33,8 @@
         <small *ngIf="group.gst"> - GST: {{ group.gst }}</small>
       </span>
       <div class="customer-actions">
-        <button type="button" (click)="confirmDeleteCustomer(group)" class="delete-button">Delete Customer</button>
+        <button type="button" (click)="openEditCustomerModal(group)" class="edit-button">Edit</button>
+        <button type="button" (click)="confirmDeleteCustomer(group)" class="delete-button">Delete</button>
       </div>
     </div>
 
@@ -64,3 +67,10 @@
   (paymentRecorded)="handlePaymentRecorded()"
   (close)="closeRecordPaymentModal()">
 </app-record-payment>
+
+<app-edit-customer
+  *ngIf="showEditCustomerModal && selectedCustomerForEdit"
+  [customer]="selectedCustomerForEdit"
+  (customerUpdated)="handleCustomerUpdated()"
+  (close)="closeEditCustomerModal()">
+</app-edit-customer>

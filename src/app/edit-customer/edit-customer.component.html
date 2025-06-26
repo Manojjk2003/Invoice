@@ -1,0 +1,61 @@
+<div class="modal-backdrop" (click)="closeModal()"></div>
+<div class="modal-content">
+  <h3 *ngIf="customer">Edit Customer: {{ customer.name }}</h3>
+  <h3 *ngIf="!customer">Edit Customer</h3>
+
+  <form *ngIf="editCustomerForm" [formGroup]="editCustomerForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="editCustomerName">Name:</label>
+      <input id="editCustomerName" formControlName="name" placeholder="Name">
+      <div *ngIf="editCustomerForm.get('name')?.invalid && editCustomerForm.get('name')?.touched" class="text-danger">
+        Name is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="editCustomerEmail">Email:</label>
+      <input id="editCustomerEmail" type="email" formControlName="email" placeholder="customer@example.com">
+      <div *ngIf="editCustomerForm.get('email')?.invalid && editCustomerForm.get('email')?.touched" class="text-danger">
+        <span *ngIf="editCustomerForm.get('email')?.errors?.['required']">Email is required.</span>
+        <span *ngIf="editCustomerForm.get('email')?.errors?.['email']">Invalid email format.</span>
+        <span *ngIf="editCustomerForm.get('email')?.errors?.['duplicate']">This email address is already in use.</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="editCustomerAddress">Address:</label>
+      <input id="editCustomerAddress" formControlName="address" placeholder="Address">
+    </div>
+
+    <div class="form-group">
+      <label for="editCustomerPhone">Phone (10 digits):</label>
+      <input id="editCustomerPhone" type="tel" formControlName="phone" placeholder="e.g., 9876543210">
+      <div *ngIf="editCustomerForm.get('phone')?.invalid && editCustomerForm.get('phone')?.touched" class="text-danger">
+        Invalid phone number (must be 10 digits).
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="editCustomerGst">GST Number (15 chars):</label>
+      <input id="editCustomerGst" formControlName="gst" placeholder="e.g., 22AAAAA0000A1Z5">
+      <div *ngIf="editCustomerForm.get('gst')?.invalid && editCustomerForm.get('gst')?.touched" class="text-danger">
+        Invalid GSTIN (must be 15 alphanumeric characters).
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="editCustomerContact">Contact Person (Optional):</label>
+      <input id="editCustomerContact" formControlName="contact" placeholder="Contact person name">
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+    <div class="modal-actions">
+      <button type="submit" [disabled]="editCustomerForm.invalid || isSaving">
+        {{ isSaving ? 'Saving...' : 'Save Changes' }}
+      </button>
+      <button type="button" (click)="closeModal()" [disabled]="isSaving">Cancel</button>
+    </div>
+  </form>
+  <div *ngIf="!editCustomerForm" class="loading-message">Loading form...</div>
+</div>

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
-  collection, addDoc, getDocs, query, where, deleteDoc, doc,
+  collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc, getDoc,
   DocumentReference, CollectionReference, QuerySnapshot
 } from 'firebase/firestore';
 import { db } from '../main';
@@ -76,6 +76,51 @@ export class CustomerService {
         console.error(`Error deleting customer ${customerId}:`, error);
       }
       throw error; // Re-throw all errors to be handled by the caller
+    }
+  }
+
+  async updateCustomer(customerId: string, customerData: Partial<Customer>): Promise<void> {
+    try {
+      if (customerData.email) {
+        // Email is being updated (or set for the first time if it was null)
+        // Need to fetch the current customer's email to see if it actually changed.
+        const currentCustomerDoc = await getDoc(doc(this.customersRef, customerId));
+        const currentCustomer = currentCustomerDoc.data() as Customer | undefined;
+
+        if (!currentCustomer) {
+          throw new Error(`Customer with ID ${customerId} not found for update.`);
+        }
+
+        // Only check for duplicate if the email is actually different from the current one.
+        if (customerData.email !== currentCustomer.email) {
+          const q = query(this.customersRef, where("email", "==", customerData.email));
+          const querySnapshot: QuerySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            // Check if the found email belongs to a *different* customer
+            let isDuplicateForOtherCustomer = false;
+            querySnapshot.forEach(docSnap => {
+              if (docSnap.id !== customerId) {
+                isDuplicateForOtherCustomer = true;
+              }
+            });
+
+            if (isDuplicateForOtherCustomer) {
+              throw new Error(`DUPLICATE_EMAIL_UPDATE: The email ${customerData.email} is already in use by another customer.`);
+            }
+          }
+        }
+      }
+
+      const customerDocRef = doc(this.customersRef, customerId);
+      await updateDoc(customerDocRef, customerData);
+    } catch (error: any) {
+      if (error.message?.startsWith('DUPLICATE_EMAIL_UPDATE:')) {
+        console.warn(error.message);
+      } else {
+        console.error(`Error updating customer ${customerId}:`, error);
+      }
+      throw error; // Re-throw all errors
     }
   }
 }
