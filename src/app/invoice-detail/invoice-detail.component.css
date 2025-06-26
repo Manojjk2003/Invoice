@@ -120,11 +120,24 @@ footer {
   border: none;
 }
 
+.download-pdf-button {
+  background-color: #17a2b8; /* Teal for download */
+  color: white;
+  border: none;
+}
+.download-pdf-button:hover {
+  background-color: #138496;
+}
+
+
 .back-button {
-  background-color: #007bff;
+  background-color: #6c757d; /* Grey for back button */
   color: white;
   border: none;
   display: inline-block; /* For proper padding and margin */
+}
+.back-button:hover {
+  background-color: #5a6268;
 }
 
 

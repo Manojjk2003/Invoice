@@ -94,7 +94,8 @@
   </footer>
 
   <div class="actions">
-    <button type="button" (click)="printInvoice()" class="print-button">Print Invoice</button>
+    <button type="button" (click)="downloadInvoiceAsPdf()" class="download-pdf-button">Download PDF</button>
+    <button type="button" (click)="printInvoice()" class="print-button">Print View</button> <!-- Kept print for current view -->
     <a routerLink="/admin" class="back-button">Back to Admin Dashboard</a>
   </div>
 
