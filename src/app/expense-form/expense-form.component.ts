@@ -123,14 +123,22 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
 
 
       const formValue = this.expenseForm.value;
-      const expenseData: Omit<Expense, 'id'> = {
-        date: new Date(formValue.date), // Ensure date is a Date object
+      const expensePayload: any = { // Use 'any' temporarily to build the object conditionally
+        date: new Date(formValue.date),
         category: formValue.category,
         description: formValue.description,
         amount: Number(formValue.amount),
-        vendor: formValue.vendor || undefined, // Store undefined if empty
-        receiptUrl: receiptUrlToSave
       };
+
+      if (formValue.vendor) {
+        expensePayload.vendor = formValue.vendor;
+      }
+      if (receiptUrlToSave) {
+        expensePayload.receiptUrl = receiptUrlToSave;
+      }
+
+      // Now cast to the correct type for the service call
+      const expenseData: Omit<Expense, 'id'> = expensePayload as Omit<Expense, 'id'>;
 
       if (this.expenseToEdit && this.expenseToEdit.id) {
         // Update existing expense
