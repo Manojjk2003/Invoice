@@ -29,10 +29,13 @@
     <li *ngFor="let invoice of invoices" class="invoice-item">
       <span>
         Invoice #{{ invoice.invoiceNumber || invoice.id }} -
-        Customer ID: {{ invoice.customerId || (invoice.customer | json) }} -
+        Customer: {{ getCustomerName(invoice.customerId || invoice.customer) }} -
         Total: {{ invoice.total | number:'1.2-2' }}
       </span>
-      <button (click)="deleteInvoice(invoice.id)" class="delete-button">Delete</button>
+      <div class="invoice-actions">
+        <a [routerLink]="['/invoice', invoice.id]" class="view-button">View</a>
+        <button (click)="deleteInvoice(invoice.id)" class="delete-button">Delete</button>
+      </div>
     </li>
   </ul>
   <div *ngIf="!isLoadingInvoices && !invoiceError && invoices.length === 0">

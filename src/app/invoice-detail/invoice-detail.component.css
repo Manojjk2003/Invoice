@@ -1,0 +1,173 @@
+/* Basic styling for invoice-detail.component.html */
+.invoice-detail-container {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  max-width: 800px; /* Standard A4-like width */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #000;
+}
+
+.logo-container .company-logo {
+  max-width: 150px;
+  max-height: 100px;
+}
+
+.company-details {
+  text-align: right;
+}
+.company-details h2 {
+  margin: 0 0 10px 0;
+  font-size: 2em;
+  color: #333;
+}
+.company-details p {
+  margin: 3px 0;
+  font-size: 0.9em;
+}
+
+.customer-invoice-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.customer-details, .invoice-meta {
+  width: 48%;
+}
+.customer-details h3, .invoice-items h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    color: #555;
+}
+.customer-details p, .invoice-meta p {
+  margin: 4px 0;
+  font-size: 0.95em;
+}
+
+.invoice-items table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.invoice-items th, .invoice-items td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+  font-size: 0.9em;
+}
+
+.invoice-items th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.invoice-items td.amount, .invoice-items th:last-child {
+  text-align: right;
+}
+.invoice-items tfoot td {
+    font-weight: bold;
+}
+.invoice-items tfoot td.text-right {
+    text-align: right;
+}
+
+
+.invoice-summary p {
+  font-size: 1em;
+  margin-bottom: 20px;
+}
+
+footer {
+  text-align: center;
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  font-size: 0.8em;
+  color: #777;
+}
+
+.actions {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.actions button, .actions a {
+  padding: 10px 20px;
+  margin: 0 10px;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.print-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+}
+
+.back-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  display: inline-block; /* For proper padding and margin */
+}
+
+
+/* Loading and Error states */
+.loading-message, .alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.alert-danger {
+  color: #a94442;
+  background-color: #f2dede;
+  border-color: #ebccd1;
+}
+
+/* Print-specific styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .invoice-detail-container, .invoice-detail-container * {
+    visibility: visible;
+  }
+  .invoice-detail-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none; /* Remove shadow if any for print */
+  }
+  .actions {
+    display: none; /* Hide buttons when printing */
+  }
+  /* Ensure background colors don't print unless necessary */
+  .invoice-items th {
+    background-color: #f2f2f2 !important; /* Important to override user agent styles */
+    -webkit-print-color-adjust: exact; /* Chrome, Safari, Edge */
+    print-color-adjust: exact; /* Firefox */
+  }
+}

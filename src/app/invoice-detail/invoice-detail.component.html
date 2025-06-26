@@ -1,0 +1,85 @@
+<div class="invoice-detail-container" *ngIf="!isLoading && !errorMessage && invoice && customer">
+  <header class="invoice-header">
+    <div class="logo-container" *ngIf="invoice.logo">
+      <img [src]="invoice.logo" alt="Company Logo" class="company-logo">
+    </div>
+    <div class="company-details">
+      <!-- You might want to make these configurable or part of settings -->
+      <h2>INVOICE</h2>
+      <p><strong>Your Company Name</strong></p>
+      <p>123 Your Street, Your City, Your State, Your ZIP</p>
+      <p>your-email&#64;example.com | (555) 123-4567</p> <!-- Replaced @ with &#64; -->
+    </div>
+  </header>
+
+  <section class="customer-invoice-info">
+    <div class="customer-details">
+      <h3>Bill To:</h3>
+      <p><strong>{{ customer.name }}</strong></p>
+      <p *ngIf="customer.address">{{ customer.address }}</p>
+      <p *ngIf="customer.contact">Contact: {{ customer.contact }}</p>
+      <p *ngIf="customer.gst">GSTIN: {{ customer.gst }}</p>
+    </div>
+    <div class="invoice-meta">
+      <p><strong>Invoice Number:</strong> {{ invoice.invoiceNumber || invoice.id }}</p>
+      <p><strong>Date:</strong> {{ (invoice.date || invoice.id) | date:'longDate' }}</p> <!-- Assuming id might be a timestamp if date is missing -->
+      <p *ngIf="invoice.clientManager"><strong>Client Manager:</strong> {{ invoice.clientManager }}</p>
+    </div>
+  </section>
+
+  <section class="invoice-items">
+    <h3>Items:</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of invoice.items">
+          <td>{{ item.description }}</td>
+          <td class="amount">{{ item.amount | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td class="text-right">Subtotal:</td>
+          <td class="amount">{{ invoice.subtotal | number:'1.2-2' }}</td>
+        </tr>
+        <tr>
+          <td class="text-right">GST (18%):</td> <!-- Assuming 18%, make dynamic if needed -->
+          <td class="amount">{{ invoice.gst | number:'1.2-2' }}</td>
+        </tr>
+        <tr>
+          <td class="text-right"><strong>Total:</strong></td>
+          <td class="amount"><strong>{{ invoice.total | number:'1.2-2' }}</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+  </section>
+
+  <section class="invoice-summary">
+    <p><strong>Amount in Words:</strong> {{ invoice.amountInWords }}</p>
+  </section>
+
+  <footer>
+    <p>Thank you for your business!</p>
+    <!-- Add bank details or other footer notes here -->
+  </footer>
+
+  <div class="actions">
+    <button type="button" (click)="printInvoice()" class="print-button">Print Invoice</button>
+    <a routerLink="/admin" class="back-button">Back to Admin Dashboard</a>
+  </div>
+
+</div>
+
+<div *ngIf="isLoading" class="loading-message">
+  Loading invoice details...
+</div>
+
+<div *ngIf="!isLoading && errorMessage" class="alert alert-danger">
+  <p>{{ errorMessage }}</p>
+  <a routerLink="/admin">Go back to Admin Dashboard</a>
+</div>

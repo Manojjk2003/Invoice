@@ -2,10 +2,11 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './home/home.component';
 import { InvoiceFormComponent } from './invoice-form/invoice-form.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
+import { InvoiceDetailComponent } from './invoice-detail/invoice-detail.component'; // Import the new component
 
 export const routes: Routes = [
-     { path: '', component: HomeComponent },
+  { path: '', component: HomeComponent },
   { path: 'create-invoice', component: InvoiceFormComponent },
-  { path: 'admin', component: AdminDashboardComponent }, 
-
+  { path: 'admin', component: AdminDashboardComponent },
+  { path: 'invoice/:id', component: InvoiceDetailComponent }, // Add new route for invoice detail
 ];

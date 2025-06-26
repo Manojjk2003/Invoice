@@ -2,18 +2,21 @@ import { Component, OnInit } from '@angular/core';
 import { CustomerService } from '../customer.service';
 import { InvoiceService } from '../invoice-form/invoice.service'; // Corrected path
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router'; // Import RouterLink
 import { Customer, Invoice } from '../core/models/app.models';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink], // Add RouterLink here
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
 export class AdminDashboardComponent implements OnInit {
   customers: Customer[] = [];
   invoices: Invoice[] = [];
+
+  private customerMap = new Map<string, string>();
 
   isLoadingCustomers = false;
   isLoadingInvoices = false;
@@ -38,6 +41,12 @@ export class AdminDashboardComponent implements OnInit {
     this.customerError = null;
     try {
       this.customers = await this.customerService.getCustomers();
+      this.customerMap.clear();
+      this.customers.forEach(customer => {
+        if (customer.id) {
+          this.customerMap.set(customer.id, customer.name);
+        }
+      });
     } catch (error) {
       this.customerError = 'Failed to load customers.';
       console.error('Error loading customers:', error);
@@ -47,6 +56,9 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async loadInvoices() {
+    // Ensure customers are loaded first or handle data display if not.
+    // For simplicity, we assume loadCustomers is called and populates the map.
+    // A more robust solution might involve Promise.all in ngOnInit or chaining.
     this.isLoadingInvoices = true;
     this.invoiceError = null;
     try {
@@ -79,5 +91,14 @@ export class AdminDashboardComponent implements OnInit {
       this.deleteError = `Failed to delete invoice (ID: ${id}). Please try again.`;
       console.error('Error deleting invoice:', error);
     }
+  }
+
+  getCustomerName(customerId: string | undefined | Customer): string {
+    if (!customerId) return 'N/A';
+    if (typeof customerId === 'object' && customerId.name) return customerId.name; // If full customer object passed
+    if (typeof customerId === 'string') {
+      return this.customerMap.get(customerId) || 'Unknown Customer';
+    }
+    return 'Invalid Customer Data';
   }
 }
