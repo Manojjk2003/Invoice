@@ -247,3 +247,69 @@ footer {
     print-color-adjust: exact; /* Firefox */
   }
 }
+
+/* Template Specific Styles */
+
+/* Default/Classic is already styled by the base rules above */
+/* .template-classic {} */
+
+/* Modern Template Styles */
+.template-modern .invoice-detail-container {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+.template-modern .invoice-header {
+  border-bottom: 2px solid #007bff; /* Modern blue accent */
+}
+.template-modern .company-details h2 {
+  color: #007bff;
+  font-size: 2.2em;
+}
+.template-modern .invoice-items th {
+  background-color: #007bff;
+  color: white;
+  border-color: #0069d9;
+}
+.template-modern .invoice-items tfoot td {
+  border-top: 2px solid #007bff;
+}
+.template-modern .invoice-items tfoot strong {
+  color: #007bff;
+}
+
+/* Simple Template Styles */
+.template-simple .invoice-detail-container {
+  font-family: 'Courier New', Courier, monospace;
+  border: 1px dashed #999;
+  padding: 15px; /* Less padding */
+}
+.template-simple .invoice-header {
+  border-bottom: 1px solid #666;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+}
+.template-simple .company-details h2 {
+  font-size: 1.8em;
+  color: #000;
+}
+.template-simple .invoice-items th {
+  background-color: #eee;
+  color: #000;
+  font-weight: normal; /* Less emphasis */
+  border: 1px solid #ccc;
+}
+.template-simple .invoice-items td {
+  border: 1px solid #ccc;
+  padding: 8px; /* Less padding */
+}
+.template-simple .invoice-items tfoot td {
+  border-top: 1px solid #666;
+  font-weight: normal;
+}
+.template-simple .invoice-items tfoot strong {
+  font-weight: bold; /* Keep totals bold */
+}
+.template-simple footer {
+    display: none; /* Very minimal footer */
+}

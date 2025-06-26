@@ -105,6 +105,19 @@
       </div>
     </div>
 
+    <!-- Template Selection -->
+    <div>
+      <label for="templateId">Invoice Template:</label>
+      <select id="templateId" formControlName="templateId">
+        <option *ngFor="let template of invoiceTemplates" [value]="template.id">
+          {{ template.name }}
+        </option>
+      </select>
+      <div *ngIf="invoiceForm.get('templateId')?.invalid && invoiceForm.get('templateId')?.touched" class="text-danger">
+        Template selection is required.
+      </div>
+    </div>
+
     <!-- Calculations -->
     <div class="calculations">
       <h4>Summary</h4>

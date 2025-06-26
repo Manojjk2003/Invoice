@@ -1,6 +1,9 @@
-<div class="invoice-detail-container" *ngIf="!isLoading && !errorMessage && invoice && customer">
-  <header class="invoice-header">
-    <div class="logo-container">
+<div class="invoice-detail-wrapper"
+     *ngIf="!isLoading && !errorMessage && invoice && customer"
+     [ngClass]="'template-' + (invoice.templateId || defaultTemplateId)">
+  <div class="invoice-detail-container"> <!-- Existing container for content structure -->
+    <header class="invoice-header">
+      <div class="logo-container">
       <!-- Always show default logo container; image itself will be from default path -->
       <img [src]="defaultCompanyLogoUrl" alt="Company Logo" class="company-logo">
     </div>

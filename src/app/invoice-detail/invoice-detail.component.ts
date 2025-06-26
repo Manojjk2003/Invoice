@@ -1,14 +1,14 @@
-import { Component, OnInit, OnDestroy, Pipe, PipeTransform } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core'; // Removed Pipe, PipeTransform
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CommonModule, DatePipe, DecimalPipe } from '@angular/common'; // Import DatePipe and DecimalPipe
+import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Subscription } from 'rxjs';
-import jsPDF from 'jspdf'; // Import jsPDF
+import jsPDF from 'jspdf';
 
 import { InvoiceService } from '../invoice-form/invoice.service';
 import { CustomerService } from '../customer.service';
-import { Invoice, Customer, Payment, InvoiceItem } from '../core/models/app.models';
+import { Invoice, Customer, Payment, InvoiceItem, DEFAULT_TEMPLATE_ID, InvoiceTemplateId } from '../core/models/app.models'; // Added DEFAULT_TEMPLATE_ID
 
-// Removed SimpleDatePipe as it's not used. Using DatePipe instance directly.
+// Removed SimpleDatePipe
 
 @Component({
   selector: 'app-invoice-detail',
@@ -32,10 +32,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   private routeSub!: Subscription;
 
   // Default company information
-  defaultCompanyName = "Your Awesome Company"; // Placeholder, can be configured
-  defaultCompanyLogoUrl = "assets/images/default-logo.png"; // Path to default logo
+  defaultCompanyName = "Your Awesome Company";
+  defaultCompanyLogoUrl = "assets/images/default-logo.png";
   defaultCompanyAddress = "123 Default Street, Default City, DS 12345";
   defaultCompanyContact = "contact@awesomecompany.com | (555) 555-5555";
+  defaultTemplateId: InvoiceTemplateId = DEFAULT_TEMPLATE_ID; // For fallback in template class binding
 
 
   constructor(
@@ -149,7 +150,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     const doc = new jsPDF();
     const pageHeight = doc.internal.pageSize.height;
-    let y = 20; // Initial Y position
+    let currentY = 20; // Initial Y position, renamed for clarity
     const lineSpacing = 7;
     const sectionSpacing = 10;
     const leftMargin = 15;
@@ -171,140 +172,168 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     };
 
 
+    // Template specific settings
+    const templateId = this.invoice.templateId || this.defaultTemplateId;
+    let primaryColor = '#000000'; // Default black for classic/simple
+    let headerFont = 'helvetica';
+    let bodyFont = 'helvetica';
+
+    if (templateId === 'modern') {
+      primaryColor = '#007bff'; // Modern blue
+      headerFont = 'helvetica'; // Or a more modern sans-serif if available and loaded
+      bodyFont = 'helvetica';
+    } else if (templateId === 'simple') {
+      headerFont = 'courier';
+      bodyFont = 'courier';
+    }
+
     // --- Header ---
     doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    y = addText('INVOICE', rightMargin, y, { align: 'right' });
+    doc.setFont(headerFont, 'bold');
+    doc.setTextColor(primaryColor); // Use template color for INVOICE title
+    currentY = addText('INVOICE', rightMargin, currentY, { align: 'right' });
+    doc.setTextColor(0, 0, 0); // Reset to black for other text unless specified
 
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    y = addText(this.defaultCompanyName, rightMargin, y, { align: 'right'});
-    doc.setFont('helvetica', 'normal');
-    y = addText(this.defaultCompanyAddress, rightMargin, y, { align: 'right'});
-    y = addText(this.defaultCompanyContact, rightMargin, y, { align: 'right'});
+    doc.setFont(headerFont, 'bold');
+    currentY = addText(this.defaultCompanyName, rightMargin, currentY, { align: 'right'});
+    doc.setFont(bodyFont, 'normal');
+    currentY = addText(this.defaultCompanyAddress, rightMargin, currentY, { align: 'right'});
+    currentY = addText(this.defaultCompanyContact, rightMargin, currentY, { align: 'right'});
 
-    y += sectionSpacing / 2;
+    currentY += sectionSpacing / 2;
 
     // --- Bill To and Invoice Meta ---
-    const billToY = y;
-    const invoiceMetaY = y;
+    const billToY = currentY; // Use currentY for start of this section
+    const invoiceMetaY = currentY;
 
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    y = addText('Bill To:', leftMargin, billToY);
-    doc.setFont('helvetica', 'normal');
-    y = addText(this.customer.name, leftMargin, y);
-    if (this.customer.address) y = addText(this.customer.address, leftMargin, y);
-    if (this.customer.contact) y = addText(`Contact: ${this.customer.contact}`, leftMargin, y);
-    if (this.customer.gst) y = addText(`GSTIN: ${this.customer.gst}`, leftMargin, y);
+    doc.setFont(headerFont, 'bold');
+    currentY = addText('Bill To:', leftMargin, billToY);
+    doc.setFont(bodyFont, 'normal');
+    currentY = addText(this.customer.name, leftMargin, currentY);
+    if (this.customer.address) currentY = addText(this.customer.address, leftMargin, currentY);
+    if (this.customer.contact) currentY = addText(`Contact: ${this.customer.contact}`, leftMargin, currentY);
+    if (this.customer.gst) currentY = addText(`GSTIN: ${this.customer.gst}`, leftMargin, currentY);
 
-    let currentMetaY = invoiceMetaY;
+    let currentMetaContentY = invoiceMetaY; // Separate Y for the right column content
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    currentMetaY = addText(`Invoice #: ${this.invoice.invoiceNumber || this.invoice.id}`, rightMargin, currentMetaY, { align: 'right' });
-    doc.setFont('helvetica', 'normal');
-    currentMetaY = addText(`Date: ${this.datePipe.transform(this.invoice.date, 'longDate') || ''}`, rightMargin, currentMetaY, { align: 'right' });
-    if (this.invoice.dueDate) currentMetaY = addText(`Due Date: ${this.datePipe.transform(this.invoice.dueDate, 'longDate') || ''}`, rightMargin, currentMetaY, { align: 'right' });
-    currentMetaY = addText(`Status: ${this.invoice.paymentStatus}`, rightMargin, currentMetaY, { align: 'right' });
+    doc.setFont(headerFont, 'bold');
+    currentMetaContentY = addText(`Invoice #: ${this.invoice.invoiceNumber || this.invoice.id}`, rightMargin, currentMetaContentY, { align: 'right' });
+    doc.setFont(bodyFont, 'normal');
+    currentMetaContentY = addText(`Date: ${this.datePipe.transform(this.invoice.date, 'longDate') || ''}`, rightMargin, currentMetaContentY, { align: 'right' });
+    if (this.invoice.dueDate) currentMetaContentY = addText(`Due Date: ${this.datePipe.transform(this.invoice.dueDate, 'longDate') || ''}`, rightMargin, currentMetaContentY, { align: 'right' });
+
+    doc.setFont(bodyFont, 'bold'); // Status can be bold
+    doc.setTextColor(this.invoice.paymentStatus === 'Paid' ? '#28a745' : (this.invoice.paymentStatus === 'Partially Paid' || this.invoice.paymentStatus === 'Overdue' ? '#ffc107' : '#dc3545') );
+    currentMetaContentY = addText(`Status: ${this.invoice.paymentStatus}`, rightMargin, currentMetaContentY, { align: 'right' });
+    doc.setTextColor(0,0,0); // Reset color
+    doc.setFont(bodyFont, 'normal');
 
 
-    y = Math.max(y, currentMetaY) + sectionSpacing;
-    y = checkPageBreak(y);
+    currentY = Math.max(currentY, currentMetaContentY) + sectionSpacing;
+    currentY = checkPageBreak(currentY);
 
     // --- Items Table ---
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    y = addText('Items', leftMargin, y);
-    y += lineSpacing / 2;
+    doc.setFont(headerFont, 'bold');
+    currentY = addText('Items', leftMargin, currentY);
+    currentY += lineSpacing / 2;
 
-    const tableStartY = y;
     const descriptionX = leftMargin;
-    const amountX = rightMargin - 30; // Amount column width approx 30
-    const tableHeaderY = y;
+    const amountX = rightMargin; // Amount will be right aligned within its column space
+    const itemAmountColWidth = 40; // Width for the amount column
+    const descriptionColWidth = contentWidth - itemAmountColWidth - 5; // 5 for some padding
 
+    const tableHeaderY = currentY;
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(headerFont, 'bold');
+    if (templateId === 'modern') doc.setTextColor(primaryColor);
     addText('Description', descriptionX, tableHeaderY);
     addText('Amount', amountX, tableHeaderY, {align: 'right'});
-    y += lineSpacing;
-    doc.line(leftMargin, y - lineSpacing / 2, rightMargin, y - lineSpacing / 2); // Line under header
+    doc.setTextColor(0,0,0); // Reset
+    currentY += lineSpacing;
+    doc.setDrawColor(templateId === 'modern' ? primaryColor : '#000000');
+    doc.line(leftMargin, currentY - lineSpacing / 2, rightMargin, currentY - lineSpacing / 2);
+    doc.setDrawColor(0,0,0); // Reset draw color
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(bodyFont, 'normal');
     this.invoice.items.forEach((item: InvoiceItem) => {
-      y = checkPageBreak(y);
-      // Handle potential multi-line descriptions (simple split for now)
-      const splitDesc = doc.splitTextToSize(item.description, amountX - descriptionX - 5);
-      let itemY = y;
+      currentY = checkPageBreak(currentY);
+      const splitDesc = doc.splitTextToSize(item.description, descriptionColWidth);
+      let itemContentY = currentY; // Y pos for current item's content
       splitDesc.forEach((line: string, index: number) => {
-          if (index > 0) itemY += lineSpacing / 1.5; // Adjust line spacing for multi-line
-          itemY = checkPageBreak(itemY);
-          doc.text(line, descriptionX, itemY);
+          if (index > 0) itemContentY += (lineSpacing / 1.5);
+          itemContentY = checkPageBreak(itemContentY);
+          doc.text(line, descriptionX, itemContentY);
       });
-      doc.text(this.decimalPipe.transform(item.amount, '1.2-2') || '0.00', amountX, y, {align: 'right'});
-      y = Math.max(y, itemY) + lineSpacing; // Ensure y advances by at least one line + item height
+      doc.text(this.decimalPipe.transform(item.amount, '1.2-2') || '0.00', amountX, currentY, {align: 'right'});
+      currentY = Math.max(currentY, itemContentY) + lineSpacing;
     });
-    doc.line(leftMargin, y - lineSpacing / 2, rightMargin, y - lineSpacing / 2); // Line after items
-    y = checkPageBreak(y);
+    doc.setDrawColor(templateId === 'modern' ? primaryColor : '#cccccc');
+    doc.line(leftMargin, currentY - lineSpacing / 2, rightMargin, currentY - lineSpacing / 2);
+    doc.setDrawColor(0,0,0);
+    currentY = checkPageBreak(currentY);
 
     // --- Totals ---
-    const addTotalLine = (label: string, value: number | string, currentY: number): number => {
-        currentY = checkPageBreak(currentY);
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, amountX - 30, currentY, { align: 'right' }); // Adjust X for label
-        doc.setFont('helvetica', 'normal');
-        doc.text(typeof value === 'number' ? (this.decimalPipe.transform(value, '1.2-2') || '0.00') : value, amountX, currentY, { align: 'right' });
-        return currentY + lineSpacing;
+    const addTotalLine = (label: string, value: number | string, localY: number, isBold = false): number => {
+        localY = checkPageBreak(localY);
+        doc.setFont(bodyFont, isBold ? 'bold' : 'normal');
+        doc.text(label, amountX - itemAmountColWidth, localY, { align: 'right' });
+        doc.text(typeof value === 'number' ? (this.decimalPipe.transform(value, '1.2-2') || '0.00') : value, amountX, localY, { align: 'right' });
+        return localY + lineSpacing;
     };
 
-    y = addTotalLine('Subtotal:', this.invoice.subtotal, y);
-    y = addTotalLine(`GST (${(0.18 * 100).toFixed(0)}%):`, this.invoice.gst, y); // Assuming GST rate, make dynamic if needed
-    doc.setFont('helvetica', 'bold');
-    y = addTotalLine('Total Amount:', this.invoice.total, y);
-    doc.setFont('helvetica', 'normal');
-    y = addTotalLine('Total Paid:', this.invoice.totalPaid, y);
-    doc.setFont('helvetica', 'bold');
-    y = addTotalLine('Balance Due:', this.invoice.total - this.invoice.totalPaid, y);
-    y = checkPageBreak(y);
-    y += sectionSpacing;
+    currentY = addTotalLine('Subtotal:', this.invoice.subtotal, currentY);
+    currentY = addTotalLine(`GST (${(0.18 * 100).toFixed(0)}%):`, this.invoice.gst, currentY);
+    currentY = addTotalLine('Total Amount:', this.invoice.total, currentY, true);
+    currentY = addTotalLine('Total Paid:', this.invoice.totalPaid, currentY);
+    doc.setFont(bodyFont, 'bold'); // Balance due always bold
+    if (templateId === 'modern') doc.setTextColor(primaryColor);
+    currentY = addTotalLine('Balance Due:', this.invoice.total - this.invoice.totalPaid, currentY, true);
+    doc.setTextColor(0,0,0);
+    currentY = checkPageBreak(currentY);
+    currentY += sectionSpacing;
 
     // --- Amount in Words ---
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    y = addText(`Amount in Words (Total): ${this.invoice.amountInWords}`, leftMargin, y);
-    y = checkPageBreak(y);
-    y += sectionSpacing;
+    doc.setFont(bodyFont, 'normal');
+    currentY = addText(`Amount in Words (Total): ${this.invoice.amountInWords}`, leftMargin, currentY);
+    currentY = checkPageBreak(currentY);
+    currentY += sectionSpacing;
 
     // --- Payment History (Optional) ---
     if (this.payments.length > 0) {
-        y = checkPageBreak(y);
+        currentY = checkPageBreak(currentY);
         doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        y = addText('Payment History:', leftMargin, y);
+        doc.setFont(headerFont, 'bold');
+        currentY = addText('Payment History:', leftMargin, currentY);
         doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
+        doc.setFont(bodyFont, 'normal');
         this.payments.forEach(p => {
-            y = checkPageBreak(y, lineSpacing * 2); // Need more space for payment line
+            currentY = checkPageBreak(currentY, lineSpacing * 2);
             let paymentLine = `Paid ${this.decimalPipe.transform(p.amountPaid, '1.2-2') || '0.00'} on ${this.datePipe.transform(p.paymentDate, 'mediumDate') || ''}`;
             if (p.paymentMethod) paymentLine += ` (Method: ${p.paymentMethod})`;
-            y = addText(paymentLine, leftMargin, y);
+            currentY = addText(paymentLine, leftMargin, currentY);
             if (p.notes) {
-                y = checkPageBreak(y);
+                currentY = checkPageBreak(currentY);
                 const splitNotes = doc.splitTextToSize(`Notes: ${p.notes}`, contentWidth);
                 splitNotes.forEach((line: string) => {
-                    y = checkPageBreak(y);
-                    y = addText(line, leftMargin + 5, y); // Indent notes
+                    currentY = checkPageBreak(currentY);
+                    currentY = addText(line, leftMargin + 5, currentY);
                 });
             }
         });
-        y += sectionSpacing;
+        currentY += sectionSpacing;
     }
 
-
     // --- Footer ---
-    y = checkPageBreak(y, pageHeight - 20); // Try to position footer near bottom
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'italic');
-    addText('Thank you for your business!', contentWidth / 2 + leftMargin, y, { align: 'center' });
+    if (templateId !== 'simple') { // Simple template hides footer via CSS, replicate for PDF
+        currentY = checkPageBreak(currentY, pageHeight - 20);
+        doc.setFontSize(10);
+        doc.setFont(bodyFont, 'italic');
+        addText('Thank you for your business!', contentWidth / 2 + leftMargin, currentY, { align: 'center' });
+    }
 
     doc.save(`Invoice-${this.invoice.invoiceNumber || this.invoice.id}.pdf`);
   }

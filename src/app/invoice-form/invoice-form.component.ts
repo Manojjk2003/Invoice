@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
 import { InvoiceService } from './invoice.service';
-import { CustomerService } from '../customer.service'; // Import CustomerService
-import { Customer, Invoice, InvoiceItem } from '../core/models/app.models';
+import { CustomerService } from '../customer.service';
+import { Customer, Invoice, InvoiceItem, InvoiceTemplate, InvoiceTemplateId, DEFAULT_TEMPLATE_ID } from '../core/models/app.models'; // Import template models
 
 @Component({
   standalone: true,
@@ -28,18 +28,24 @@ export class InvoiceFormComponent implements OnInit {
   isSavingCustomer = false;
   isSavingInvoice = false;
 
+  invoiceTemplates: InvoiceTemplate[] = [
+    { id: 'classic', name: 'Classic' },
+    { id: 'modern', name: 'Modern' },
+    { id: 'simple', name: 'Simple' }
+  ];
+
   constructor(
     private fb: FormBuilder,
     private invoiceService: InvoiceService,
-    private customerService: CustomerService // Inject CustomerService
+    private customerService: CustomerService
   ) {}
 
   ngOnInit(): void {
     this.invoiceForm = this.fb.group({
-      customer: ['', Validators.required], // Will store customer ID
+      customer: ['', Validators.required],
       clientManager: ['', Validators.required],
+      templateId: [DEFAULT_TEMPLATE_ID, Validators.required], // Added templateId FormControl
       items: this.fb.array([]),
-      // logo: [''] // Removed: Logo per invoice is handled by default now
     });
 
     this.newCustomerForm = this.fb.group({
@@ -166,25 +172,26 @@ export class InvoiceFormComponent implements OnInit {
       const formValue = this.invoiceForm.value;
       // Adjust type to match what InvoiceService.createInvoice expects
       const invoiceData: Omit<Invoice, 'id' | 'paymentStatus' | 'totalPaid'> = {
-        customer: formValue.customer, // This should be the customer ID string
+        customer: formValue.customer,
         clientManager: formValue.clientManager,
+        templateId: formValue.templateId, // Include templateId
         items: formValue.items as InvoiceItem[],
-        // logo: logoUrl, // Removed: Default logo will be used at display time
         subtotal: this.subtotal,
         gst: this.gst,
         total: this.total,
         amountInWords: this.amountInWords,
-        date: new Date(), // Set current date and time
-        // invoiceNumber: could be generated here or by the service/backend
-        // customer: this.customers.find(c => c.id === formValue.customer) // Optionally embed customer object
+        date: new Date(),
       };
 
       await this.invoiceService.createInvoice(invoiceData);
       this.successMessage = 'Invoice saved successfully!';
-      this.invoiceForm.reset({ customer: '', clientManager: ''}); // Removed logo from reset
+      this.invoiceForm.reset({
+        customer: '',
+        clientManager: '',
+        templateId: DEFAULT_TEMPLATE_ID // Reset templateId to default
+      });
       this.items.clear();
-      this.addItem(); // Add one fresh item
-      // this.logoFile = null; // Removed
+      this.addItem();
       // Consider navigating away or showing a persistent success message
     } catch (error) {
       this.errorMessage = 'Failed to save invoice. Please try again.';
