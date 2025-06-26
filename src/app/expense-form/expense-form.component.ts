@@ -49,8 +49,15 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
 
   private initializeForm(): void {
     const today = new Date().toISOString().substring(0, 10);
+    let initialDate = today;
+    if (this.expenseToEdit?.date) {
+      const d = this.expenseToEdit.date;
+      // Handle both Firestore Timestamp and string/Date representations
+      initialDate = new Date((d as any).toDate ? (d as any).toDate() : d).toISOString().substring(0,10);
+    }
+
     this.expenseForm = this.fb.group({
-      date: [this.expenseToEdit?.date ? new Date(this.expenseToEdit.date).toISOString().substring(0,10) : today, Validators.required],
+      date: [initialDate, Validators.required],
       category: [this.expenseToEdit?.category || this.expenseCategories[0], Validators.required],
       description: [this.expenseToEdit?.description || '', Validators.required],
       amount: [this.expenseToEdit?.amount || null, [Validators.required, Validators.min(0.01)]],
@@ -117,7 +124,7 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
 
       const formValue = this.expenseForm.value;
       const expenseData: Omit<Expense, 'id'> = {
-        date: formValue.date,
+        date: new Date(formValue.date), // Ensure date is a Date object
         category: formValue.category,
         description: formValue.description,
         amount: Number(formValue.amount),
