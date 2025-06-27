@@ -2,19 +2,33 @@
   <h1>Main Dashboard</h1>
   <p>Welcome to your Invoice Application Dashboard.</p>
 
+  <div *ngIf="metricsError" class="alert alert-danger">{{ metricsError }}</div>
+
   <section class="summary-cards">
-    <!-- Placeholder for summary cards/widgets -->
     <div class="card">
-      <h4>Total Unpaid Invoices</h4>
-      <p class="metric">--</p>
+      <h4>Total Customers</h4>
+      <p class="metric" *ngIf="!isLoadingMetrics">{{ totalCustomers }}</p>
+      <p class="metric" *ngIf="isLoadingMetrics">Loading...</p>
     </div>
     <div class="card">
-      <h4>Total Overdue</h4>
-      <p class="metric">--</p>
+      <h4>Total Invoices</h4>
+      <p class="metric" *ngIf="!isLoadingMetrics">{{ totalInvoices }}</p>
+      <p class="metric" *ngIf="isLoadingMetrics">Loading...</p>
     </div>
     <div class="card">
-      <h4>Revenue This Month</h4>
-      <p class="metric">--</p>
+      <h4>Total Unpaid Value</h4>
+      <p class="metric" *ngIf="!isLoadingMetrics">{{ totalUnpaidValue | currency:displayCurrency }}</p>
+      <p class="metric" *ngIf="isLoadingMetrics">Loading...</p>
+    </div>
+    <div class="card">
+      <h4>Total Overdue Value</h4>
+      <p class="metric" *ngIf="!isLoadingMetrics">{{ totalOverdueValue | currency:displayCurrency }}</p>
+      <p class="metric" *ngIf="isLoadingMetrics">Loading...</p>
+    </div>
+    <div class="card">
+      <h4>Expenses This Month</h4>
+      <p class="metric" *ngIf="!isLoadingMetrics">{{ totalExpensesThisMonth | currency:displayCurrency }}</p>
+      <p class="metric" *ngIf="isLoadingMetrics">Loading...</p>
     </div>
   </section>
 
