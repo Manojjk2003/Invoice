@@ -33,9 +33,26 @@
   </section>
 
   <section class="charts-section">
-    <h2>Activity Overview</h2>
-    <div class="chart-placeholder">
-      <p>[Bar graph / Chart showing financial activity will be displayed here]</p>
+    <h2>Monthly Income vs. Expenses (Last 12 Months)</h2>
+    <div *ngIf="isLoadingMetrics" class="loading-message">Loading chart data...</div>
+    <div *ngIf="!isLoadingMetrics && incomeExpenseChartData.length > 0" class="chart-container">
+      <ngx-charts-bar-vertical-grouped
+        [view]="chartView"
+        [scheme]="chartColorScheme"
+        [results]="incomeExpenseChartData"
+        [xAxis]="chartShowXAxis"
+        [yAxis]="chartShowYAxis"
+        [legend]="chartShowLegend"
+        [showXAxisLabel]="chartShowXAxisLabel"
+        [showYAxisLabel]="chartShowYAxisLabel"
+        [xAxisLabel]="chartXAxisLabel"
+        [yAxisLabel]="chartYAxisLabel"
+        [gradient]="chartGradient"
+        (select)="onChartSelect($event)">
+      </ngx-charts-bar-vertical-grouped>
+    </div>
+    <div *ngIf="!isLoadingMetrics && incomeExpenseChartData.length === 0 && !metricsError" class="no-data-message">
+      Not enough data to display chart.
     </div>
   </section>
 

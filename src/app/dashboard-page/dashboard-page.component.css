@@ -49,17 +49,29 @@
     color: #444;
 }
 
-.chart-placeholder {
+.chart-placeholder, .chart-container, .no-data-message {
   background-color: #f8f9fa;
-  border: 1px dashed #ccc;
-  padding: 40px;
+  border: 1px solid #e0e0e0;
+  padding: 20px;
   text-align: center;
   color: #777;
-  min-height: 200px; /* Example height */
+  min-height: 300px; /* Adjusted height for chart */
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 5px;
+  margin-top: 10px;
 }
+
+.chart-container {
+  background-color: #fff; /* White background for the chart itself */
+  padding: 10px; /* Less padding if chart has its own */
+}
+
+.no-data-message {
+  font-style: italic;
+}
+
 
 .quick-actions ul {
   list-style: none;

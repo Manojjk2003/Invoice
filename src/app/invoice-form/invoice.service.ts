@@ -129,4 +129,24 @@ export class InvoiceService {
       throw error;
     }
   }
+
+  async getAllPayments(): Promise<Payment[]> {
+    try {
+      // Consider adding orderBy('paymentDate', 'desc') if needed, but for aggregation, order might not matter.
+      const snapshot = await getDocs(this.paymentsRef);
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Ensure paymentDate is converted to JS Date for consistency
+        const paymentDateValue = data.paymentDate as any;
+        return {
+          id: doc.id,
+          ...data,
+          paymentDate: paymentDateValue && paymentDateValue.toDate ? paymentDateValue.toDate() : new Date(paymentDateValue)
+        } as Payment;
+      });
+    } catch (error) {
+      console.error("Error fetching all payments:", error);
+      throw error;
+    }
+  }
 }
