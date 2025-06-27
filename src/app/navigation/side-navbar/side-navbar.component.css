@@ -1,0 +1,81 @@
+/* Basic styling for side-navbar */
+.side-navbar {
+  width: 220px; /* Example width */
+  height: 100vh; /* Full viewport height */
+  background-color: #2c3e50; /* Dark blue/grey - Zoho-like */
+  color: #ecf0f1; /* Light text color */
+  padding-top: 15px;
+  display: flex;
+  flex-direction: column;
+  position: fixed; /* Fixed position */
+  top: 0;
+  left: 0;
+  z-index: 100; /* Ensure it's above some content if overlap occurs, but below modals */
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.navbar-header {
+  padding: 0 15px 15px 15px;
+  text-align: center;
+  border-bottom: 1px solid #34495e; /* Slightly lighter separator */
+  margin-bottom: 10px;
+}
+
+.app-brand {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #ecf0f1;
+  text-decoration: none;
+}
+.app-brand:hover {
+  color: #ffffff;
+}
+
+
+.navbar-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1; /* Allow it to take remaining space */
+  overflow-y: auto; /* Scroll if too many items */
+}
+
+.navbar-nav li a {
+  display: flex; /* Use flex for icon and text alignment */
+  align-items: center;
+  padding: 12px 20px;
+  text-decoration: none;
+  color: #bdc3c7; /* Lighter grey for links */
+  font-size: 0.95em;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  border-left: 3px solid transparent; /* For active link indicator */
+}
+
+.navbar-nav li a:hover {
+  background-color: #34495e; /* Slightly lighter bg on hover */
+  color: #ffffff;
+  border-left-color: #1abc9c; /* Teal accent - Zoho-like */
+}
+
+.navbar-nav li a.active-link {
+  background-color: #212f3c; /* Darker for active */
+  color: #ffffff;
+  font-weight: 500;
+  border-left-color: #1abc9c; /* Teal accent */
+}
+
+.nav-icon {
+  margin-right: 10px;
+  font-size: 1.1em; /* Make icons slightly larger */
+  width: 20px; /* Ensure consistent spacing */
+  text-align: center;
+}
+
+.disabled-link {
+  color: #7f8c8d !important; /* Muted color for disabled links */
+  cursor: not-allowed;
+}
+.disabled-link:hover {
+  background-color: transparent !important;
+  border-left-color: transparent !important;
+}

@@ -1,0 +1,45 @@
+<nav class="side-navbar">
+  <div class="navbar-header">
+    <!-- Could be a logo or app name -->
+    <a routerLink="/" class="app-brand">InvoiceApp</a>
+  </div>
+  <ul class="navbar-nav">
+    <li>
+      <a routerLink="/dashboard" routerLinkActive="active-link">
+        <span class="nav-icon">📊</span> <!-- Placeholder icon -->
+        Dashboard
+      </a>
+    </li>
+    <li>
+      <a routerLink="/admin" routerLinkActive="active-link"> <!-- Current admin page for Invoices/Customers -->
+        <span class="nav-icon">💼</span>
+        Invoices & Customers
+      </a>
+    </li>
+    <li>
+      <a routerLink="/expenses" routerLinkActive="active-link">
+        <span class="nav-icon">💳</span>
+        Expenses
+      </a>
+    </li>
+     <li>
+      <a routerLink="/create-invoice" routerLinkActive="active-link">
+        <span class="nav-icon">➕</span>
+        Create Invoice
+      </a>
+    </li>
+    <!-- Placeholder for future features -->
+    <li>
+      <a href="#" class="disabled-link"> <!-- Placeholder, not a real route yet -->
+        <span class="nav-icon">📄</span>
+        Reports
+      </a>
+    </li>
+    <li>
+      <a href="#" class="disabled-link"> <!-- Placeholder -->
+        <span class="nav-icon">⚙️</span>
+        Settings
+      </a>
+    </li>
+  </ul>
+</nav>

@@ -1,0 +1,37 @@
+/* AppComponent specific styles for layout */
+:host {
+  display: block; /* Ensure app-root takes up space */
+}
+
+.app-container {
+  display: flex;
+  height: 100vh; /* Full viewport height */
+  width: 100vw; /* Full viewport width */
+  overflow: hidden; /* Prevent whole page scroll if content overflows, content area will scroll */
+}
+
+/* .app-sidenav is styled within its own component for width, background etc.
+   Here we just ensure it's part of the flex layout.
+   It has position:fixed from its own CSS.
+*/
+.app-sidenav {
+  /* The side-navbar itself is position:fixed, so it doesn't participate in this flex layout directly.
+     The main content area needs to account for its width. */
+}
+
+.app-content {
+  flex-grow: 1; /* Takes up remaining space */
+  /* Add padding-left to account for the fixed sidenav's width */
+  /* This should match the width defined in side-navbar.component.css */
+  padding-left: 220px; /* Example: same as side-navbar width */
+  overflow-y: auto; /* Allow content area to scroll if it overflows */
+  height: 100vh; /* Ensure it can scroll independently for full height content */
+  box-sizing: border-box; /* Include padding in width/height calculations */
+}
+
+/* Optional: Add some default padding to the content area children if desired,
+   or handle this within individual page components.
+.app-content > *:first-child {
+  padding: 20px;
+}
+*/
