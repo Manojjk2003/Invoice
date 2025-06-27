@@ -65,6 +65,11 @@ export interface Invoice {
   // Template Selection
   templateId?: InvoiceTemplateId;
   currency: CurrencyCode; // Added: Currency for this invoice
+
+  // Discount Fields
+  discountType?: 'percentage' | 'fixed' | null; // Type of discount
+  discountValue?: number | null; // Value of discount (percentage or fixed amount)
+  discountAmount?: number; // Calculated discount amount, always stored
 }
 
 export interface Payment {

@@ -131,12 +131,44 @@
       </div>
     </div>
 
+    <!-- Discount Section -->
+    <div class="discount-section">
+      <h4>Discount</h4>
+      <div class="form-group-inline">
+        <div>
+          <label for="discountType">Discount Type:</label>
+          <select id="discountType" formControlName="discountType">
+            <option [ngValue]="null">None</option>
+            <option value="percentage">Percentage (%)</option>
+            <option value="fixed">Fixed Amount</option>
+          </select>
+        </div>
+        <div *ngIf="invoiceForm.get('discountType')?.value">
+          <label for="discountValue">Value:</label>
+          <input type="number" id="discountValue" formControlName="discountValue" placeholder="0.00" step="0.01">
+          <!-- Basic validation message, can be enhanced with Validators.pattern if needed -->
+          <div *ngIf="invoiceForm.get('discountValue')?.invalid && invoiceForm.get('discountValue')?.touched" class="text-danger">
+            <span *ngIf="invoiceForm.get('discountValue')?.value <= 0 && invoiceForm.get('discountType')?.value">Discount value must be positive.</span>
+            <span *ngIf="invoiceForm.get('discountType')?.value === 'percentage' && invoiceForm.get('discountValue')?.value > 100">Percentage cannot exceed 100.</span>
+            <!-- Add more specific validation messages based on validators in .ts file -->
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Calculations -->
     <div class="calculations">
       <h4>Summary</h4>
-      <p>Subtotal: {{ subtotal | number:'1.2-2' }}</p>
-      <p>GST ({{gstRate * 100}}%): {{ gst | number:'1.2-2' }}</p>
-      <p><strong>Total: {{ total | number:'1.2-2' }}</strong></p>
+      <p>Subtotal: {{ subtotal | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</p>
+      <div *ngIf="calculatedDiscountAmount > 0">
+        <p>Discount: {{ calculatedDiscountAmount | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}
+          <small *ngIf="invoiceForm.get('discountType')?.value === 'percentage'">({{ invoiceForm.get('discountValue')?.value }}%)</small>
+          <small *ngIf="invoiceForm.get('discountType')?.value === 'fixed'">(Fixed)</small>
+        </p>
+        <p>Subtotal After Discount: {{ subtotalAfterDiscount | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</p>
+      </div>
+      <p>GST ({{gstRate * 100}}%): {{ gst | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</p>
+      <p><strong>Total: {{ total | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</strong></p>
       <p><small>Amount in Words: {{ amountInWords }}</small></p>
     </div>
 

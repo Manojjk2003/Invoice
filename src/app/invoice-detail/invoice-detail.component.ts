@@ -296,6 +296,19 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     };
 
     currentY = addTotalLine('Subtotal:', this.invoice.subtotal, currentY);
+
+    if (this.invoice.discountAmount && this.invoice.discountAmount > 0) {
+      let discountLabel = 'Discount';
+      if (this.invoice.discountType === 'percentage') {
+        discountLabel += ` (${this.invoice.discountValue}%)`;
+      } else if (this.invoice.discountType === 'fixed') {
+        discountLabel += ` (Fixed)`;
+      }
+      currentY = addTotalLine(discountLabel + ':', -this.invoice.discountAmount, currentY); // Show discount as negative
+      const subtotalAfterDiscount = this.invoice.subtotal - this.invoice.discountAmount;
+      currentY = addTotalLine('Subtotal After Discount:', subtotalAfterDiscount, currentY);
+    }
+
     currentY = addTotalLine(`GST (${(0.18 * 100).toFixed(0)}%):`, this.invoice.gst, currentY);
     currentY = addTotalLine('Total Amount:', this.invoice.total, currentY, true);
     currentY = addTotalLine('Total Paid:', this.invoice.totalPaid, currentY);

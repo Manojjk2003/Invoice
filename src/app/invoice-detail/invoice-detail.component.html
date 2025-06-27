@@ -52,6 +52,18 @@
           <td class="text-right">Subtotal:</td>
           <td class="amount">{{ invoice.subtotal | currency:(invoice.currency || defaultCurrencyCode) }}</td>
         </tr>
+        <tr *ngIf="invoice.discountAmount && invoice.discountAmount > 0">
+          <td class="text-right">
+            Discount
+            <small *ngIf="invoice.discountType === 'percentage'">({{ invoice.discountValue }}%)</small>
+            <small *ngIf="invoice.discountType === 'fixed'">(Fixed)</small>:
+          </td>
+          <td class="amount">- {{ invoice.discountAmount | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+        </tr>
+        <tr *ngIf="invoice.discountAmount && invoice.discountAmount > 0">
+            <td class="text-right">Subtotal After Discount:</td>
+            <td class="amount">{{ (invoice.subtotal - (invoice.discountAmount || 0)) | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+        </tr>
         <tr>
           <td class="text-right">GST (18%):</td> <!-- Assuming 18%, make dynamic if needed -->
           <td class="amount">{{ invoice.gst | currency:(invoice.currency || defaultCurrencyCode) }}</td>

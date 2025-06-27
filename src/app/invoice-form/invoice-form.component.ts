@@ -39,6 +39,7 @@ export class InvoiceFormComponent implements OnInit {
   ];
 
   supportedCurrencies: Currency[] = SUPPORTED_CURRENCIES;
+  defaultCurrencyCode: CurrencyCode = DEFAULT_CURRENCY_CODE; // For template fallback
 
   constructor(
     private fb: FormBuilder,
@@ -51,8 +52,10 @@ export class InvoiceFormComponent implements OnInit {
       customer: ['', Validators.required],
       clientManager: ['', Validators.required],
       templateId: [DEFAULT_TEMPLATE_ID, Validators.required],
-      currency: [DEFAULT_CURRENCY_CODE, Validators.required], // Added currency FormControl
+      currency: [DEFAULT_CURRENCY_CODE, Validators.required],
       items: this.fb.array([]),
+      discountType: [null], // 'percentage', 'fixed', or null for no discount
+      discountValue: [null]  // Numerical value of the discount
     });
 
     this.newCustomerForm = this.fb.group({
@@ -182,9 +185,14 @@ export class InvoiceFormComponent implements OnInit {
         customer: formValue.customer,
         clientManager: formValue.clientManager,
         templateId: formValue.templateId,
-        currency: formValue.currency, // Include currency
+        currency: formValue.currency,
         items: formValue.items as InvoiceItem[],
-        subtotal: this.subtotal,
+        subtotal: this.subtotal, // Original subtotal before discount
+        discountType: formValue.discountType,
+        discountValue: formValue.discountValue ? Number(formValue.discountValue) : null,
+        discountAmount: this.calculatedDiscountAmount, // Calculated discount amount
+        // Note: GST and Total are calculated based on subtotalAfterDiscount,
+        // but they are stored on the invoice based on their final calculated values.
         gst: this.gst,
         total: this.total,
         amountInWords: this.amountInWords,
@@ -197,7 +205,9 @@ export class InvoiceFormComponent implements OnInit {
         customer: '',
         clientManager: '',
         templateId: DEFAULT_TEMPLATE_ID,
-        currency: DEFAULT_CURRENCY_CODE // Reset currency to default
+        currency: DEFAULT_CURRENCY_CODE,
+        discountType: null, // Reset discount fields
+        discountValue: null
       });
       this.items.clear();
       this.addItem();
@@ -214,16 +224,39 @@ export class InvoiceFormComponent implements OnInit {
     return this.items.value.reduce((sum: number, item: InvoiceItem) => sum + Number(item.amount || 0), 0);
   }
 
+  get calculatedDiscountAmount(): number {
+    const type = this.invoiceForm.get('discountType')?.value;
+    const value = Number(this.invoiceForm.get('discountValue')?.value) || 0;
+    const currentSubtotal = this.subtotal;
+
+    if (!type || value <= 0) {
+      return 0;
+    }
+
+    if (type === 'percentage') {
+      if (value > 100) return 0; // Cap percentage discount at 100%
+      return (currentSubtotal * value) / 100;
+    } else if (type === 'fixed') {
+      return Math.min(currentSubtotal, value); // Fixed discount cannot exceed subtotal
+    }
+    return 0;
+  }
+
+  get subtotalAfterDiscount(): number {
+    return this.subtotal - this.calculatedDiscountAmount;
+  }
+
   get gstRate(): number {
     return 0.18; // Hardcoded, consider making this configurable
   }
 
   get gst(): number {
-    return this.subtotal * this.gstRate;
+    // GST should be calculated on the subtotal after discount
+    return this.subtotalAfterDiscount * this.gstRate;
   }
 
   get total(): number {
-    return this.subtotal + this.gst;
+    return this.subtotalAfterDiscount + this.gst;
   }
 
   get amountInWords(): string {
