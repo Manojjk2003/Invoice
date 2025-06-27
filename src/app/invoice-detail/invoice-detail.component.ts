@@ -294,12 +294,16 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     currentY = checkPageBreak(currentY);
 
     // --- Totals ---
+    // Define x-coordinates for labels and values in the totals section
+    const totalLabelX = rightMargin - 50; // Position for the right-aligned labels
+    const totalValueX = rightMargin;    // Position for the right-aligned values
+
     const addTotalLine = (label: string, value: number | string, localY: number, isBold = false): number => {
         localY = checkPageBreak(localY);
         doc.setFont(bodyFont, isBold ? 'bold' : 'normal');
-        doc.text(label, amountX - itemAmountColWidth, localY, { align: 'right' });
+        doc.text(label, totalLabelX, localY, { align: 'right' });
         const formattedValue = typeof value === 'number' ? (this.decimalPipe.transform(value, '1.2-2') || '0.00') : value;
-        doc.text(currencySymbol + formattedValue, amountX, localY, { align: 'right' });
+        doc.text(currencySymbol + formattedValue, totalValueX, localY, { align: 'right' });
         return localY + lineSpacing;
     };
 
