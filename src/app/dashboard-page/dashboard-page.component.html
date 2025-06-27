@@ -36,9 +36,9 @@
     <h2>Monthly Income vs. Expenses (Last 12 Months)</h2>
     <div *ngIf="isLoadingMetrics" class="loading-message">Loading chart data...</div>
     <div *ngIf="!isLoadingMetrics && incomeExpenseChartData.length > 0" class="chart-container">
-      <ngx-charts-bar-vertical-grouped
+      <ngx-charts-bar-vertical
         [view]="chartView"
-        [scheme]="chartColorScheme"
+        [scheme]="'vivid'"
         [results]="incomeExpenseChartData"
         [xAxis]="chartShowXAxis"
         [yAxis]="chartShowYAxis"
@@ -49,7 +49,7 @@
         [yAxisLabel]="chartYAxisLabel"
         [gradient]="chartGradient"
         (select)="onChartSelect($event)">
-      </ngx-charts-bar-vertical-grouped>
+      </ngx-charts-bar-vertical>
     </div>
     <div *ngIf="!isLoadingMetrics && incomeExpenseChartData.length === 0 && !metricsError" class="no-data-message">
       Not enough data to display chart.

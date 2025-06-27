@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BarChartModule } from '@swimlane/ngx-charts'; // Try importing BarChartModule
-
+import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { CustomerService } from '../customer.service';
 import { InvoiceService } from '../invoice-form/invoice.service';
 import { ExpenseService } from '../expense.service';
@@ -11,7 +11,7 @@ import { Customer, Invoice, Expense, CurrencyCode, DEFAULT_CURRENCY_CODE } from 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, CurrencyPipe, BarChartModule], // Use BarChartModule
+  imports: [CommonModule, RouterLink, CurrencyPipe, BarChartModule,NgxChartsModule], // Use BarChartModule
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css']
 })
