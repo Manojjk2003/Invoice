@@ -189,8 +189,11 @@ footer {
   font-weight: bold;
 }
 
-.amount-column { /* To align header for amount column */
+.amount-column {
   text-align: right;
+}
+.quantity-column {
+  text-align: center;
 }
 
 .payment-history {

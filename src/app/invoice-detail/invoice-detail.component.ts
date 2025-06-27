@@ -251,16 +251,21 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     currentY += lineSpacing / 2;
 
     const descriptionX = leftMargin;
-    const amountX = rightMargin; // Amount will be right aligned within its column space
-    const itemAmountColWidth = 40; // Width for the amount column
-    const descriptionColWidth = contentWidth - itemAmountColWidth - 5; // 5 for some padding
+    const quantityX = contentWidth * 0.5 + leftMargin; // Approx 50% for description
+    const unitPriceX = contentWidth * 0.7 + leftMargin; // Approx 20% for quantity
+    const lineTotalX = rightMargin; // Approx 20% for unit price, then line total
+
+    const descriptionColWidth = quantityX - descriptionX - 5;
+    // Other column widths can be implicitly managed by alignment or fixed values.
 
     const tableHeaderY = currentY;
     doc.setFontSize(10);
     doc.setFont(headerFont, 'bold');
     if (templateId === 'modern') doc.setTextColor(primaryColor);
     addText('Description', descriptionX, tableHeaderY);
-    addText('Amount', amountX, tableHeaderY, {align: 'right'});
+    addText('Qty', quantityX, tableHeaderY, { align: 'center' });
+    addText('Unit Price', unitPriceX, tableHeaderY, { align: 'right' });
+    addText('Line Total', lineTotalX, tableHeaderY, { align: 'right' });
     doc.setTextColor(0,0,0); // Reset
     currentY += lineSpacing;
     doc.setDrawColor(templateId === 'modern' ? primaryColor : '#000000');
@@ -271,13 +276,16 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.invoice.items.forEach((item: InvoiceItem) => {
       currentY = checkPageBreak(currentY);
       const splitDesc = doc.splitTextToSize(item.description, descriptionColWidth);
-      let itemContentY = currentY; // Y pos for current item's content
+      let itemContentY = currentY;
       splitDesc.forEach((line: string, index: number) => {
           if (index > 0) itemContentY += (lineSpacing / 1.5);
           itemContentY = checkPageBreak(itemContentY);
           doc.text(line, descriptionX, itemContentY);
       });
-      doc.text(currencySymbol + (this.decimalPipe.transform(item.amount, '1.2-2') || '0.00'), amountX, currentY, {align: 'right'});
+
+      doc.text(item.quantity.toString(), quantityX, currentY, { align: 'center' });
+      doc.text(currencySymbol + (this.decimalPipe.transform(item.unitPrice, '1.2-2') || '0.00'), unitPriceX, currentY, { align: 'right' });
+      doc.text(currencySymbol + (this.decimalPipe.transform(item.lineTotal, '1.2-2') || '0.00'), lineTotalX, currentY, { align: 'right' });
       currentY = Math.max(currentY, itemContentY) + lineSpacing;
     });
     doc.setDrawColor(templateId === 'modern' ? primaryColor : '#cccccc');

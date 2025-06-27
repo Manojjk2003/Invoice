@@ -38,13 +38,17 @@
       <thead>
         <tr>
           <th>Description</th>
-          <th class="amount-column">Amount</th>
+          <th class="quantity-column">Qty</th>
+          <th class="amount-column">Unit Price</th>
+          <th class="amount-column">Line Total</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of invoice.items">
           <td>{{ item.description }}</td>
-          <td class="amount">{{ item.amount | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+          <td class="quantity-column">{{ item.quantity }}</td>
+          <td class="amount">{{ item.unitPrice | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+          <td class="amount">{{ item.lineTotal | currency:(invoice.currency || defaultCurrencyCode) }}</td>
         </tr>
       </tbody>
       <tfoot>

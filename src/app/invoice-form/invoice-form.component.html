@@ -74,19 +74,30 @@
     <h3>Invoice Items</h3>
     <div formArrayName="items">
       <div *ngFor="let item of items.controls; let i = index" [formGroupName]="i" class="item-row">
-        <div>
+        <div class="item-description">
           <label for="itemDescription{{i}}">Description:</label>
           <input id="itemDescription{{i}}" formControlName="description" placeholder="Item description">
           <div *ngIf="items.controls[i].get('description')?.invalid && items.controls[i].get('description')?.touched" class="text-danger">
             Description is required.
           </div>
         </div>
-        <div>
-          <label for="itemAmount{{i}}">Amount:</label>
-          <input id="itemAmount{{i}}" type="number" formControlName="amount" placeholder="Amount">
-           <div *ngIf="items.controls[i].get('amount')?.invalid && items.controls[i].get('amount')?.touched" class="text-danger">
-            Valid amount is required (min 0.01).
+        <div class="item-quantity">
+          <label for="itemQuantity{{i}}">Qty:</label>
+          <input id="itemQuantity{{i}}" type="number" formControlName="quantity" placeholder="1">
+          <div *ngIf="items.controls[i].get('quantity')?.invalid && items.controls[i].get('quantity')?.touched" class="text-danger">
+            Min qty is 1.
           </div>
+        </div>
+        <div class="item-unit-price">
+          <label for="itemUnitPrice{{i}}">Unit Price:</label>
+          <input id="itemUnitPrice{{i}}" type="number" formControlName="unitPrice" placeholder="0.00" step="0.01">
+           <div *ngIf="items.controls[i].get('unitPrice')?.invalid && items.controls[i].get('unitPrice')?.touched" class="text-danger">
+            Valid price is required.
+          </div>
+        </div>
+        <div class="item-line-total">
+          <label>Line Total:</label>
+          <input type="text" [value]="items.controls[i].get('lineTotal')?.value | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode)" readonly>
         </div>
         <button type="button" (click)="removeItem(i)" class="remove-item-btn">Remove Item</button>
       </div>

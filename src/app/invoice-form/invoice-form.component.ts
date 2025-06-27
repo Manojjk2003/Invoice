@@ -93,10 +93,24 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   createItem(): FormGroup {
-    return this.fb.group({
+    const itemGroup = this.fb.group({
       description: ['', Validators.required],
-      amount: [0, [Validators.required, Validators.min(0.01)]]
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      unitPrice: [null, [Validators.required, Validators.min(0.01)]],
+      lineTotal: [{ value: 0, disabled: true }] // Calculated, so disabled
     });
+
+    // Subscribe to quantity and unitPrice changes to update lineTotal
+    itemGroup.get('quantity')?.valueChanges.subscribe(() => this.updateLineTotal(itemGroup));
+    itemGroup.get('unitPrice')?.valueChanges.subscribe(() => this.updateLineTotal(itemGroup));
+
+    return itemGroup;
+  }
+
+  updateLineTotal(itemGroup: FormGroup): void {
+    const quantity = Number(itemGroup.get('quantity')?.value) || 0;
+    const unitPrice = Number(itemGroup.get('unitPrice')?.value) || 0;
+    itemGroup.get('lineTotal')?.setValue(quantity * unitPrice, { emitEvent: false });
   }
 
   addItem() {
@@ -186,7 +200,12 @@ export class InvoiceFormComponent implements OnInit {
         clientManager: formValue.clientManager,
         templateId: formValue.templateId,
         currency: formValue.currency,
-        items: formValue.items as InvoiceItem[],
+        items: formValue.items.map((item: any) => ({ // Process items to include lineTotal
+          description: item.description,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          lineTotal: (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
+        })),
         subtotal: this.subtotal, // Original subtotal before discount
         discountType: formValue.discountType,
         discountValue: formValue.discountValue ? Number(formValue.discountValue) : null,
@@ -221,7 +240,12 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   get subtotal(): number {
-    return this.items.value.reduce((sum: number, item: InvoiceItem) => sum + Number(item.amount || 0), 0);
+    // Subtotal is sum of lineTotals
+    return this.items.controls.reduce((sum, itemControl) => {
+      const quantity = Number(itemControl.get('quantity')?.value) || 0;
+      const unitPrice = Number(itemControl.get('unitPrice')?.value) || 0;
+      return sum + (quantity * unitPrice);
+    }, 0);
   }
 
   get calculatedDiscountAmount(): number {

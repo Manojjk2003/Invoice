@@ -10,7 +10,9 @@ export interface Customer {
 
 export interface InvoiceItem {
   description: string;
-  amount: number;
+  quantity: number;    // e.g., 2
+  unitPrice: number;   // e.g., 50.00
+  lineTotal: number;   // Calculated: quantity * unitPrice, e.g., 100.00
 }
 
 // Currency Definitions
