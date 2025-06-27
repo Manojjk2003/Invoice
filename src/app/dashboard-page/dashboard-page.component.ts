@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { NgxChartsModule, BarVerticalGroupedComponent } from '@swimlane/ngx-charts'; // Import NgxChartsModule and specific component
+import { BarChartModule } from '@swimlane/ngx-charts'; // Try importing BarChartModule
 
 import { CustomerService } from '../customer.service';
 import { InvoiceService } from '../invoice-form/invoice.service';
@@ -11,9 +11,7 @@ import { Customer, Invoice, Expense, CurrencyCode, DEFAULT_CURRENCY_CODE } from 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  // NgxChartsModule is not typically imported in standalone components directly.
-  // Instead, import the specific chart components you use.
-  imports: [CommonModule, RouterLink, CurrencyPipe, BarVerticalGroupedComponent],
+  imports: [CommonModule, RouterLink, CurrencyPipe, BarChartModule], // Use BarChartModule
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css']
 })
@@ -109,6 +107,7 @@ export class DashboardPageComponent implements OnInit {
           })
           .reduce((sum, p) => sum + p.amountPaid, 0);
 
+        // Calculate monthlyExpenses (removed duplicate block)
         const monthlyExpenses = expenses
           .filter(exp => {
             const expenseDate = (exp.date as any).toDate ? (exp.date as any).toDate() : new Date(exp.date);
@@ -116,6 +115,7 @@ export class DashboardPageComponent implements OnInit {
           })
           .reduce((sum, exp) => sum + exp.amount, 0);
 
+        // Data format for grouped bar chart
         chartDataResult.push({
           name: monthKey,
           series: [
@@ -125,6 +125,7 @@ export class DashboardPageComponent implements OnInit {
         });
       }
       this.incomeExpenseChartData = chartDataResult;
+      this.chartShowLegend = true; // Restore legend for grouped chart
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);

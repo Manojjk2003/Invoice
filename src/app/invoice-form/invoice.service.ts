@@ -137,7 +137,8 @@ export class InvoiceService {
       return snapshot.docs.map(doc => {
         const data = doc.data();
         // Ensure paymentDate is converted to JS Date for consistency
-        const paymentDateValue = data.paymentDate as any;
+        // Use bracket notation for index signature access if 'data' is not strongly typed here
+        const paymentDateValue = data['paymentDate'] as any;
         return {
           id: doc.id,
           ...data,
