@@ -78,7 +78,7 @@ export interface Payment {
   id?: string; // Firestore generated ID
   invoiceId: string; // Foreign key to Invoice
   // currency?: CurrencyCode; // Optional: If payments can be in different currency than invoice
-  paymentDate: Date | string; // Date of payment
+  paymentDate: Date; // Date of payment - Service layer should ensure this is a JS Date object
   amountPaid: number;
   paymentMethod?: 'Cash' | 'Credit Card' | 'Bank Transfer' | 'Cheque' | 'Other';
   notes?: string;

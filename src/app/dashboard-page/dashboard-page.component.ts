@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'; // Import CUSTOM_ELEMENTS_SCHEMA
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { BarChartModule } from '@swimlane/ngx-charts'; // Try importing BarChartModule
 import { NgxChartsModule } from '@swimlane/ngx-charts';
+
 import { CustomerService } from '../customer.service';
 import { InvoiceService } from '../invoice-form/invoice.service';
 import { ExpenseService } from '../expense.service';
@@ -11,9 +11,10 @@ import { Customer, Invoice, Expense, CurrencyCode, DEFAULT_CURRENCY_CODE } from 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, CurrencyPipe, BarChartModule,NgxChartsModule], // Use BarChartModule
+  imports: [CommonModule, RouterLink, CurrencyPipe, NgxChartsModule],
   templateUrl: './dashboard-page.component.html',
-  styleUrls: ['./dashboard-page.component.css']
+  styleUrls: ['./dashboard-page.component.css'],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA] // Add CUSTOM_ELEMENTS_SCHEMA
 })
 export class DashboardPageComponent implements OnInit {
   isLoadingMetrics = false;
@@ -29,10 +30,10 @@ export class DashboardPageComponent implements OnInit {
   displayCurrency: CurrencyCode = DEFAULT_CURRENCY_CODE;
 
   // Chart properties
-  incomeExpenseChartData: any[] = [];
-  chartView: [number, number] = [700, 400]; // width, height
-  chartColorScheme = {
-    domain: ['#5AA454', '#A10A28', '#C7B42C', '#AAAAAA'] // Green for income, Red for expenses
+  financialSummaryChartData: any[] = []; // Renamed for clarity
+  chartView: [number, number] = [700, 400];
+  chartColorScheme = { // Updated for 3 series
+    domain: ['#4FC3F7', '#5AA454', '#F44336'] // Light Blue (Bills), Green (Income), Red (Expenses)
   };
   chartShowXAxis = true;
   chartShowYAxis = true;
@@ -57,16 +58,39 @@ export class DashboardPageComponent implements OnInit {
   async loadDashboardData(): Promise<void> {
     this.isLoadingMetrics = true;
     this.metricsError = null;
-    this.incomeExpenseChartData = []; // Reset chart data
+    this.financialSummaryChartData = []; // Reset chart data
 
     try {
       // Fetch all necessary data in parallel
-      const [customers, invoices, expenses, allPayments] = await Promise.all([
+      const [customers, allInvoices, allExpenses, allPayments] = await Promise.all([
         this.customerService.getCustomers(),
-        this.invoiceService.getInvoices(), // Still needed for some metrics if not derived from payments
+        this.invoiceService.getInvoices(),
         this.expenseService.getExpenses(),
-        this.invoiceService.getAllPayments() // Fetch all payments
+        this.invoiceService.getAllPayments()
       ]);
+
+      // Convert all relevant dates in fetched data to JS Date objects immediately
+      const convertToDate = (dateInput: any): Date | undefined => {
+        if (!dateInput) return undefined;
+        if (dateInput.toDate) return dateInput.toDate(); // Firestore Timestamp
+        const d = new Date(dateInput);
+        return isNaN(d.getTime()) ? undefined : d; // Return undefined if date is invalid
+      };
+
+      const invoices = allInvoices.map(inv => {
+        const mappedInv = {
+          ...inv,
+          date: convertToDate(inv.date), // Invoice.date is optional
+          dueDate: convertToDate(inv.dueDate)
+        };
+        return mappedInv;
+      });
+
+      const expenses = allExpenses.map(exp => ({
+        ...exp,
+        date: convertToDate(exp.date)! // Expense.date is required
+      }));
+      // allPayments' paymentDate are already converted to Date objects in InvoiceService.getAllPayments()
 
       // Calculate summary metrics (as before)
       this.totalCustomers = customers.length;
@@ -84,48 +108,45 @@ export class DashboardPageComponent implements OnInit {
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
 
+      // Use the already date-converted 'expenses' array for totalExpensesThisMonth
       this.totalExpensesThisMonth = expenses
-        .filter(exp => {
-          // Ensure exp.date is a JS Date object before calling getMonth/getFullYear
-          const expenseDate = (exp.date as any).toDate ? (exp.date as any).toDate() : new Date(exp.date);
-          return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
-        })
+        .filter(exp => exp.date.getMonth() === currentMonth && exp.date.getFullYear() === currentYear)
         .reduce((sum, exp) => sum + exp.amount, 0);
 
-      // Prepare data for Income vs. Expenses chart (last 12 months)
+      // Prepare data for Bills vs. Income vs. Expenses chart (last 12 months)
       const chartDataResult = [];
       for (let i = 11; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthName = date.toLocaleString('default', { month: 'short' });
-        const year = date.getFullYear().toString().slice(-2);
+        const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthName = targetDate.toLocaleString('default', { month: 'short' });
+        const year = targetDate.getFullYear().toString().slice(-2);
         const monthKey = `${monthName} '${year}`;
 
-        const monthlyIncome = allPayments
-          .filter(p => {
-            const paymentDate = p.paymentDate instanceof Date ? p.paymentDate : new Date(p.paymentDate);
-            return paymentDate.getFullYear() === date.getFullYear() && paymentDate.getMonth() === date.getMonth();
+        const monthlyBillsCreated = invoices
+          .filter(inv => {
+            // inv.date is now Date | undefined
+            return inv.date && inv.date.getFullYear() === targetDate.getFullYear() && inv.date.getMonth() === targetDate.getMonth();
           })
+          .reduce((sum, inv) => sum + inv.total, 0);
+
+        const monthlyIncomeReceived = allPayments // allPayments' dates are already JS Dates
+          .filter(p => p.paymentDate.getFullYear() === targetDate.getFullYear() && p.paymentDate.getMonth() === targetDate.getMonth())
           .reduce((sum, p) => sum + p.amountPaid, 0);
 
-        // Calculate monthlyExpenses (removed duplicate block)
-        const monthlyExpenses = expenses
-          .filter(exp => {
-            const expenseDate = (exp.date as any).toDate ? (exp.date as any).toDate() : new Date(exp.date);
-            return expenseDate.getFullYear() === date.getFullYear() && expenseDate.getMonth() === date.getMonth();
-          })
+        const monthlyExpenses = expenses // expenses' dates are already JS Dates (and required)
+          .filter(exp => exp.date.getFullYear() === targetDate.getFullYear() && exp.date.getMonth() === targetDate.getMonth())
           .reduce((sum, exp) => sum + exp.amount, 0);
 
-        // Data format for grouped bar chart
         chartDataResult.push({
           name: monthKey,
           series: [
-            { name: 'Income', value: monthlyIncome },
+            { name: 'Bills Created', value: monthlyBillsCreated },
+            { name: 'Income Received', value: monthlyIncomeReceived },
             { name: 'Expenses', value: monthlyExpenses }
           ]
         });
       }
-      this.incomeExpenseChartData = chartDataResult;
-      this.chartShowLegend = true; // Restore legend for grouped chart
+      this.financialSummaryChartData = chartDataResult;
+      this.chartShowLegend = true;
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);

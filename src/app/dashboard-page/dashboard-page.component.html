@@ -33,13 +33,13 @@
   </section>
 
   <section class="charts-section">
-    <h2>Monthly Income vs. Expenses (Last 12 Months)</h2>
+    <h2>Monthly Financial Summary (Last 12 Months)</h2>
     <div *ngIf="isLoadingMetrics" class="loading-message">Loading chart data...</div>
-    <div *ngIf="!isLoadingMetrics && incomeExpenseChartData.length > 0" class="chart-container">
-      <ngx-charts-bar-vertical
+    <div *ngIf="!isLoadingMetrics && financialSummaryChartData.length > 0" class="chart-container">
+      <ngx-charts-bar-vertical-grouped
         [view]="chartView"
-        [scheme]="'vivid'"
-        [results]="incomeExpenseChartData"
+        [scheme]="chartColorScheme"
+        [results]="financialSummaryChartData"
         [xAxis]="chartShowXAxis"
         [yAxis]="chartShowYAxis"
         [legend]="chartShowLegend"
@@ -48,10 +48,11 @@
         [xAxisLabel]="chartXAxisLabel"
         [yAxisLabel]="chartYAxisLabel"
         [gradient]="chartGradient"
+        [groupPadding]="16"
         (select)="onChartSelect($event)">
-      </ngx-charts-bar-vertical>
+      </ngx-charts-bar-vertical-grouped>
     </div>
-    <div *ngIf="!isLoadingMetrics && incomeExpenseChartData.length === 0 && !metricsError" class="no-data-message">
+    <div *ngIf="!isLoadingMetrics && financialSummaryChartData.length === 0 && !metricsError" class="no-data-message">
       Not enough data to display chart.
     </div>
   </section>
