@@ -74,9 +74,21 @@
     <h3>Invoice Items</h3>
     <div formArrayName="items">
       <div *ngFor="let item of items.controls; let i = index" [formGroupName]="i" class="item-row">
+
+        <div class="item-product-select"> <!-- Added for product selection -->
+          <label for="itemProduct{{i}}">Product/Service:</label>
+          <select id="itemProduct{{i}}" formControlName="productId" (change)="onProductSelected(i, $event)">
+            <option [ngValue]="null">-- Select a Product/Service (Optional) --</option>
+            <option *ngIf="isLoadingProducts" disabled>Loading products...</option>
+            <option *ngFor="let product of products" [value]="product.id">
+              {{ product.name }} ({{ product.defaultUnitPrice | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }})
+            </option>
+          </select>
+        </div>
+
         <div class="item-description">
           <label for="itemDescription{{i}}">Description:</label>
-          <input id="itemDescription{{i}}" formControlName="description" placeholder="Item description">
+          <input id="itemDescription{{i}}" formControlName="description" placeholder="Item description (auto-filled if product selected)">
           <div *ngIf="items.controls[i].get('description')?.invalid && items.controls[i].get('description')?.touched" class="text-danger">
             Description is required.
           </div>

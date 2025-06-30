@@ -95,3 +95,12 @@ export interface Expense {
   receiptUrl?: string; // Optional: URL to an uploaded receipt image/PDF
   // userId?: string; // Optional: If implementing multi-user system later
 }
+
+// Used for Product/Service Management Feature
+export interface ProductOrService {
+  id?: string; // Firestore generated
+  name: string; // e.g., "Web Design Hourly Rate", "Standard Widget"
+  description?: string; // Optional longer description
+  defaultUnitPrice: number; // Standard price for one unit
+  defaultUnit?: string; // Optional, e.g., "hour", "item", "kg"
+}

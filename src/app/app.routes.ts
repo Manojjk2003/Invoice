@@ -5,6 +5,7 @@ import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.compo
 import { InvoiceDetailComponent } from './invoice-detail/invoice-detail.component';
 import { ExpenseDashboardComponent } from './expense-dashboard/expense-dashboard.component';
 import { DashboardPageComponent } from './dashboard-page/dashboard-page.component'; // Import DashboardPageComponent
+import { ProductManagementComponent } from './product-management/product-management.component'; // Import ProductManagementComponent
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' }, // Redirect empty path to dashboard
@@ -14,4 +15,5 @@ export const routes: Routes = [
   { path: 'admin', component: AdminDashboardComponent }, // This might be refactored into specific Invoice/Customer lists later
   { path: 'invoice/:id', component: InvoiceDetailComponent },
   { path: 'expenses', component: ExpenseDashboardComponent },
+  { path: 'products', component: ProductManagementComponent }, // Route for Product Management
 ];

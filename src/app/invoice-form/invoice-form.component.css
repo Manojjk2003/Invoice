@@ -135,10 +135,12 @@ button.remove-item-btn {
     border-bottom: none;
 }
 
-.item-description { flex: 4; } /* Description takes more space */
-.item-quantity { flex: 1; min-width: 80px; }
-.item-unit-price { flex: 2; min-width: 120px; }
-.item-line-total { flex: 2; min-width: 120px; }
+/* Adjust flex values to accommodate the new product select dropdown */
+.item-product-select { flex: 3; min-width: 180px; } /* Added */
+.item-description { flex: 3; } /* Description takes more space */
+.item-quantity { flex: 1; min-width: 70px; }
+.item-unit-price { flex: 1.5; min-width: 100px; }
+.item-line-total { flex: 1.5; min-width: 100px; }
 .item-line-total input {
     background-color: #e9ecef; /* Make read-only look different */
     font-weight: bold;

@@ -7,8 +7,10 @@ import { CustomerService } from '../customer.service';
 import {
   Customer, Invoice, InvoiceItem,
   InvoiceTemplate, InvoiceTemplateId, DEFAULT_TEMPLATE_ID,
-  Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE
+  Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE,
+  ProductOrService // Added
 } from '../core/models/app.models'; // Import currency models
+import { ProductService } from '../product.service'; // Added
 
 @Component({
   standalone: true,
@@ -24,6 +26,8 @@ export class InvoiceFormComponent implements OnInit {
   // logoFile: File | null = null; // Removed: Logo upload per invoice is removed
   customers: Customer[] = [];
   showNewCustomer = false;
+  products: ProductOrService[] = []; // Added for product selection
+  isLoadingProducts = false; // Added
 
   // For user feedback
   errorMessage: string | null = null;
@@ -44,7 +48,8 @@ export class InvoiceFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private invoiceService: InvoiceService,
-    private customerService: CustomerService
+    private customerService: CustomerService,
+    private productService: ProductService // Added
   ) {}
 
   ngOnInit(): void {
@@ -72,6 +77,7 @@ export class InvoiceFormComponent implements OnInit {
     });
 
     this.loadCustomers();
+    this.loadProducts(); // Added
     this.addItem(); // Add an initial line item
   }
 
@@ -88,12 +94,28 @@ export class InvoiceFormComponent implements OnInit {
     }
   }
 
+  loadProducts(): void { // Added method
+    this.isLoadingProducts = true;
+    this.productService.getProducts().subscribe({
+      next: (products) => {
+        this.products = products;
+        this.isLoadingProducts = false;
+      },
+      error: (err) => {
+        console.error('Error loading products:', err);
+        this.errorMessage = 'Failed to load products/services. Please try again.';
+        this.isLoadingProducts = false;
+      }
+    });
+  }
+
   get items(): FormArray {
     return this.invoiceForm.get('items') as FormArray;
   }
 
   createItem(): FormGroup {
     const itemGroup = this.fb.group({
+      productId: [null], // Added for product selection
       description: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
       unitPrice: [null, [Validators.required, Validators.min(0.01)]],
@@ -105,6 +127,32 @@ export class InvoiceFormComponent implements OnInit {
     itemGroup.get('unitPrice')?.valueChanges.subscribe(() => this.updateLineTotal(itemGroup));
 
     return itemGroup;
+  }
+
+  onProductSelected(itemIndex: number, event: Event): void { // Added method
+    const selectedProductId = (event.target as HTMLSelectElement).value;
+    if (!selectedProductId) {
+      // Optionally reset description and unit price if "Select Product" is chosen
+      // Or, allow manual override by not doing anything here.
+      // For now, let's clear them if the user deselects a product.
+      const currentItem = this.items.at(itemIndex) as FormGroup;
+      // currentItem.patchValue({
+      //   description: '', // Or keep existing description if user wants to customize
+      //   unitPrice: null
+      // });
+      return;
+    }
+
+    const product = this.products.find(p => p.id === selectedProductId);
+    if (product) {
+      const itemFormGroup = this.items.at(itemIndex) as FormGroup;
+      itemFormGroup.patchValue({
+        description: product.name + (product.description ? ` (${product.description})` : ''), // Combine name and description
+        unitPrice: product.defaultUnitPrice,
+        // productId is already set by the form control binding
+      });
+      this.updateLineTotal(itemFormGroup); // Ensure line total is updated
+    }
   }
 
   updateLineTotal(itemGroup: FormGroup): void {

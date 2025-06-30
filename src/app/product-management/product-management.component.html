@@ -1,0 +1,66 @@
+<div class="product-management-container">
+  <header class="page-header">
+    <h1>Product & Service Management</h1>
+    <button class="btn btn-primary" (click)="showAddProductForm()">
+      <i class="fas fa-plus-circle"></i> Add New Product/Service
+    </button>
+  </header>
+
+  <div *ngIf="feedbackMessage"
+       [ngClass]="{'feedback-success': feedbackType === 'success', 'feedback-error': feedbackType === 'error'}"
+       class="feedback-message">
+    {{ feedbackMessage }}
+  </div>
+
+  <div *ngIf="products$ | async as products; else loadingOrError">
+    <div *ngIf="products.length > 0; else noProducts" class="table-responsive">
+      <table class="table product-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Default Unit Price</th>
+            <th>Default Unit</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products">
+            <td>{{ product.name }}</td>
+            <td>{{ product.description || '-' }}</td>
+            <td>{{ product.defaultUnitPrice | currency:'INR':'symbol':'1.2-2' }}</td> <!-- Example currency, adjust as needed -->
+            <td>{{ product.defaultUnit || '-' }}</td>
+            <td>
+              <button class="btn btn-sm btn-secondary" (click)="showEditProductForm(product)">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="handleDeleteProduct(product.id!, product.name)">
+                <i class="fas fa-trash-alt"></i> Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noProducts>
+      <div class="empty-state">
+        <i class="fas fa-box-open"></i>
+        <p>No products or services found. Get started by adding one!</p>
+      </div>
+    </ng-template>
+  </div>
+  <ng-template #loadingOrError>
+    <div class="loading-state">
+      <p>Loading products...</p>
+      <!-- Or handle error state here if products$ emits an error -->
+    </div>
+  </ng-template>
+
+  <!-- Product Form Modal -->
+  <app-product-form
+    [isVisible]="isProductFormVisible"
+    [product]="currentProduct"
+    (saveProduct)="handleSaveProduct($event)"
+    (closeModal)="closeProductForm()">
+  </app-product-form>
+</div>
