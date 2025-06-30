@@ -1,0 +1,70 @@
+<div class="vendor-management-container">
+  <header class="page-header">
+    <h1>Vendor Management</h1>
+    <button class="btn btn-primary" (click)="showAddVendorForm()">
+      <i class="fas fa-plus-circle"></i> Add New Vendor
+    </button>
+  </header>
+
+  <div *ngIf="feedbackMessage"
+       [ngClass]="{'feedback-success': feedbackType === 'success', 'feedback-error': feedbackType === 'error'}"
+       class="feedback-message">
+    {{ feedbackMessage }}
+  </div>
+
+  <div *ngIf="vendors$ | async as vendors; else loadingOrError">
+    <div *ngIf="vendors.length > 0; else noVendors" class="table-responsive">
+      <table class="table vendor-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Contact Person</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let vendor of vendors">
+            <td>{{ vendor.name }}</td>
+            <td>{{ vendor.contactPerson || '-' }}</td>
+            <td>{{ vendor.email || '-' }}</td>
+            <td>{{ vendor.phone || '-' }}</td>
+            <td>{{ vendor.address || '-' }}</td>
+            <td>{{ vendor.notes || '-' }}</td>
+            <td>
+              <button class="btn btn-sm btn-secondary" (click)="showEditVendorForm(vendor)">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="handleDeleteVendor(vendor.id, vendor.name)">
+                <i class="fas fa-trash-alt"></i> Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #noVendors>
+      <div class="empty-state">
+        <i class="fas fa-store-alt-slash"></i> <!-- Example icon for no vendors -->
+        <p>No vendors found. Get started by adding one!</p>
+      </div>
+    </ng-template>
+  </div>
+  <ng-template #loadingOrError>
+    <div class="loading-state">
+      <p>Loading vendors...</p>
+      <!-- Or handle error state here if vendors$ emits an error -->
+    </div>
+  </ng-template>
+
+  <!-- Vendor Form Modal -->
+  <app-vendor-form
+    [isVisible]="isVendorFormVisible"
+    [vendor]="currentVendor"
+    (saveVendor)="handleSaveVendor($event)"
+    (closeModal)="closeVendorForm()">
+  </app-vendor-form>
+</div>

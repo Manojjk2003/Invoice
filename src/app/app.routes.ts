@@ -6,6 +6,7 @@ import { InvoiceDetailComponent } from './invoice-detail/invoice-detail.componen
 import { ExpenseDashboardComponent } from './expense-dashboard/expense-dashboard.component';
 import { DashboardPageComponent } from './dashboard-page/dashboard-page.component'; // Import DashboardPageComponent
 import { ProductManagementComponent } from './product-management/product-management.component'; // Import ProductManagementComponent
+import { VendorManagementComponent } from './vendor-management/vendor-management.component'; // Import VendorManagementComponent
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' }, // Redirect empty path to dashboard
@@ -16,4 +17,5 @@ export const routes: Routes = [
   { path: 'invoice/:id', component: InvoiceDetailComponent },
   { path: 'expenses', component: ExpenseDashboardComponent },
   { path: 'products', component: ProductManagementComponent }, // Route for Product Management
+  { path: 'vendors', component: VendorManagementComponent },   // Route for Vendor Management
 ];

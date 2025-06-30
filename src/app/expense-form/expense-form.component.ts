@@ -2,7 +2,8 @@ import { Component, EventEmitter, Input, OnInit, OnChanges, Output, SimpleChange
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ExpenseService } from '../expense.service';
-import { Expense, Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE } from '../core/models/app.models'; // Import currency models
+import { VendorService } from '../vendor.service'; // Added VendorService
+import { Expense, Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE, Vendor } from '../core/models/app.models'; // Import Vendor model
 
 @Component({
   selector: 'app-expense-form',
@@ -27,13 +28,18 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
   expenseCategories: string[] = ['Office Supplies', 'Travel', 'Software', 'Utilities', 'Meals', 'Marketing', 'Other'];
   supportedCurrencies: Currency[] = SUPPORTED_CURRENCIES;
 
+  vendors: Vendor[] = []; // Added for vendor selection
+  isLoadingVendors = false; // Added
+
   constructor(
     private fb: FormBuilder,
-    private expenseService: ExpenseService
+    private expenseService: ExpenseService,
+    private vendorService: VendorService // Added
   ) {}
 
   ngOnInit(): void {
     this.initializeForm();
+    this.loadVendors(); // Added call
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -72,6 +78,34 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
         this.existingReceiptUrl = null;
     }
     this.receiptFile = null;
+  }
+
+  loadVendors(): void {
+    this.isLoadingVendors = true;
+    this.vendorService.getVendors().subscribe({
+      next: (vendors) => {
+        this.vendors = vendors;
+        this.isLoadingVendors = false;
+      },
+      error: (err) => {
+        console.error('Error loading vendors:', err);
+        // Optionally set an error message for vendors loading
+        this.isLoadingVendors = false;
+      }
+    });
+  }
+
+  onVendorSelected(event: Event): void {
+    const selectedVendorName = (event.target as HTMLSelectElement).value;
+    // The value of the select options will be the vendor's name.
+    // We directly patch the form's vendor field with this name.
+    // If the value was vendor.id, we'd find the vendor and use vendor.name.
+    if (selectedVendorName) {
+      this.expenseForm.patchValue({ vendor: selectedVendorName });
+    } else {
+      // If "-- Select Vendor --" or similar is chosen, clear the field
+      this.expenseForm.patchValue({ vendor: '' });
+    }
   }
 
   onReceiptFileChange(event: Event): void {

@@ -51,8 +51,15 @@
     </div>
 
     <div class="form-group">
-      <label for="expenseVendor">Vendor (Optional):</label>
-      <input type="text" id="expenseVendor" formControlName="vendor" placeholder="Vendor name">
+      <label for="vendorSelect">Select Vendor (Optional):</label>
+      <select id="vendorSelect" class="form-control mb-2" (change)="onVendorSelected($event)">
+        <option value="">-- Select an Existing Vendor --</option>
+        <option *ngIf="isLoadingVendors" disabled>Loading vendors...</option>
+        <option *ngFor="let v of vendors" [value]="v.name">{{ v.name }}</option>
+      </select>
+
+      <label for="expenseVendor">Or Enter Vendor Name:</label>
+      <input type="text" id="expenseVendor" formControlName="vendor" placeholder="Vendor name (e.g., from selection or new)" class="form-control">
     </div>
 
     <div class="form-group">

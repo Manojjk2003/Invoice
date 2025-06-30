@@ -104,3 +104,14 @@ export interface ProductOrService {
   defaultUnitPrice: number; // Standard price for one unit
   defaultUnit?: string; // Optional, e.g., "hour", "item", "kg"
 }
+
+// Used for Vendor Management Feature
+export interface Vendor {
+  id?: string; // Firestore generated
+  name: string; // Required, e.g., "Office Supplies Co.", "Tech Solutions Ltd."
+  contactPerson?: string;
+  email?: string; // Optional, with email validation if provided
+  phone?: string; // Optional, with phone pattern validation if provided
+  address?: string;
+  notes?: string; // General notes about the vendor
+}
