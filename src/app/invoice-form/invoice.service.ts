@@ -1,24 +1,27 @@
 // src/app/invoice-form/invoice.service.ts
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core'; // Added inject
 import {
   collection, addDoc, getDocs, updateDoc, doc, deleteDoc, CollectionReference, DocumentReference,
-  query, where, writeBatch, getDoc, runTransaction
+  query, where, writeBatch, getDoc, runTransaction, Firestore // Added Firestore
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, getStorage, StorageReference } from 'firebase/storage';
-import { db } from '../../main';
+import { ref, uploadBytes, getDownloadURL, StorageReference } from 'firebase/storage'; // Removed FirebaseStorage from here
+import { Storage } from '@angular/fire/storage'; // Added Storage import from @angular/fire/storage
+// import { db } from '../../main'; // Removed db import
 import { Invoice, Payment } from '../core/models/app.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InvoiceService {
+  private firestore: Firestore = inject(Firestore); // Injected Firestore
+  private storage: Storage = inject(Storage); // Used Storage type from @angular/fire/storage
   private invoicesRef: CollectionReference;
   private paymentsRef: CollectionReference;
-  private storage = getStorage();
+  // private storage = getStorage(); // Removed manual getStorage
 
   constructor() {
-    this.invoicesRef = collection(db, 'invoices');
-    this.paymentsRef = collection(db, 'payments');
+    this.invoicesRef = collection(this.firestore, 'invoices');
+    this.paymentsRef = collection(this.firestore, 'payments');
   }
 
   async createInvoice(invoiceData: Omit<Invoice, 'id' | 'paymentStatus' | 'totalPaid'>): Promise<string> {
@@ -62,7 +65,7 @@ export class InvoiceService {
 
   async updateInvoice(id: string, data: Partial<Invoice>): Promise<void> {
     try {
-      const invoiceRef: DocumentReference = doc(db, 'invoices', id);
+      const invoiceRef: DocumentReference = doc(this.firestore, 'invoices', id); // Changed db to this.firestore
       await updateDoc(invoiceRef, data);
     } catch (error) {
       console.error("Error updating invoice:", error);
@@ -72,7 +75,7 @@ export class InvoiceService {
 
   async deleteInvoice(id: string): Promise<void> {
     try {
-      const invoiceRef: DocumentReference = doc(db, 'invoices', id);
+      const invoiceRef: DocumentReference = doc(this.firestore, 'invoices', id); // Changed db to this.firestore
       await deleteDoc(invoiceRef);
     } catch (error) {
       console.error("Error deleting invoice:", error);

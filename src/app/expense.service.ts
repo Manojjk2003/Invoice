@@ -1,21 +1,24 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core'; // Added inject
 import {
   collection, addDoc, getDocs, updateDoc, doc, deleteDoc, CollectionReference, DocumentReference,
-  query, orderBy // Added orderBy for getExpenses
+  query, orderBy, Firestore // Added Firestore
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, getStorage, StorageReference, deleteObject as deleteFile } from 'firebase/storage'; // Added deleteObject for Firebase Storage
-import { db } from '../main'; // Assuming db is exported from main.ts
+import { ref, uploadBytes, getDownloadURL, StorageReference, deleteObject as deleteFile } from 'firebase/storage'; // Removed FirebaseStorage
+import { Storage } from '@angular/fire/storage'; // Added Storage import from @angular/fire/storage
+// import { db } from '../main'; // Removed db import
 import { Expense } from './core/models/app.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExpenseService {
+  private firestore: Firestore = inject(Firestore); // Injected Firestore
+  private storage: Storage = inject(Storage); // Used Storage type from @angular/fire/storage
   private expensesRef: CollectionReference;
-  private storage = getStorage(); // Initialize Firebase Storage instance
+  // private storage = getStorage(); // Removed manual getStorage
 
   constructor() {
-    this.expensesRef = collection(db, 'expenses');
+    this.expensesRef = collection(this.firestore, 'expenses');
   }
 
   // Add a new expense

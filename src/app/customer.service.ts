@@ -1,25 +1,26 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core'; // Added inject
 import {
   collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc, getDoc,
-  DocumentReference, CollectionReference, QuerySnapshot
+  DocumentReference, CollectionReference, QuerySnapshot, Firestore // Added Firestore
 } from 'firebase/firestore';
-import { db } from '../main';
+// import { db } from '../main'; // Removed db import
 import { Customer } from './core/models/app.models';
 
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
+  private firestore: Firestore = inject(Firestore); // Injected Firestore
   private customersRef: CollectionReference;
   private invoicesRef: CollectionReference; // For checking associated invoices
 
   constructor() {
-    this.customersRef = collection(db, 'customers');
-    this.invoicesRef = collection(db, 'invoices'); // Initialize invoices collection reference
+    this.customersRef = collection(this.firestore, 'customers');
+    this.invoicesRef = collection(this.firestore, 'invoices'); // Initialize invoices collection reference
   }
 
   async getCustomers(): Promise<Customer[]> {
     try {
       const snapshot = await getDocs(this.customersRef);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
+      return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Customer)); // Changed doc to docSnap for clarity
     } catch (error) {
       console.error("Error fetching customers:", error);
       throw error; // Re-throw the error to be handled by the caller
