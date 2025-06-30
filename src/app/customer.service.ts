@@ -1,18 +1,19 @@
 import { Injectable, inject } from '@angular/core'; // Added inject
 import {
   collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc, getDoc,
-  DocumentReference, CollectionReference, QuerySnapshot, Firestore // Added Firestore
-} from 'firebase/firestore';
+  DocumentReference, CollectionReference, QuerySnapshot, Firestore
+} from '@angular/fire/firestore'; // Changed to @angular/fire/firestore
 // import { db } from '../main'; // Removed db import
 import { Customer } from './core/models/app.models';
 
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
-  private firestore: Firestore = inject(Firestore); // Injected Firestore
+  private firestore: Firestore;
   private customersRef: CollectionReference;
   private invoicesRef: CollectionReference; // For checking associated invoices
 
   constructor() {
+    this.firestore = inject(Firestore); // Moved inject here
     this.customersRef = collection(this.firestore, 'customers');
     this.invoicesRef = collection(this.firestore, 'invoices'); // Initialize invoices collection reference
   }

@@ -2,10 +2,10 @@
 import { Injectable, inject } from '@angular/core'; // Added inject
 import {
   collection, addDoc, getDocs, updateDoc, doc, deleteDoc, CollectionReference, DocumentReference,
-  query, where, writeBatch, getDoc, runTransaction, Firestore // Added Firestore
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, StorageReference } from 'firebase/storage'; // Removed FirebaseStorage from here
-import { Storage } from '@angular/fire/storage'; // Added Storage import from @angular/fire/storage
+  query, where, writeBatch, getDoc, runTransaction, Firestore
+} from '@angular/fire/firestore'; // Changed to @angular/fire/firestore
+import { ref, uploadBytes, getDownloadURL, StorageReference } from 'firebase/storage';
+import { Storage } from '@angular/fire/storage';
 // import { db } from '../../main'; // Removed db import
 import { Invoice, Payment } from '../core/models/app.models';
 
