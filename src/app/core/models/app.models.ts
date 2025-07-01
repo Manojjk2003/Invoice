@@ -54,7 +54,9 @@ export interface Invoice {
   logo?: string; // This might be deprecated if only default logo is used
   subtotal: number;
   gst: number;
-  total: number;
+  totalBeforeRoundOff: number; // Renamed from total
+  roundOffAmount?: number;    // e.g., +0.30 or -0.20
+  grandTotal: number;         // Final amount after rounding
   amountInWords: string;
   invoiceNumber?: string; // Usually generated or assigned
   date?: Date | string; // Or a Firestore Timestamp

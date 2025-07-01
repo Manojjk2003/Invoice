@@ -231,7 +231,18 @@
         <p>Subtotal After Discount: {{ subtotalAfterDiscount | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</p>
       </div>
       <p>GST ({{gstRate * 100}}%): {{ gst | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</p>
-      <p><strong>Total: {{ total | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</strong></p>
+      <p>Total Before Round-off: {{ calculatedTotal | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</p>
+
+      <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="applyRoundOff" formControlName="applyRoundOff">
+        <label class="form-check-label" for="applyRoundOff">Apply Round-off</label>
+      </div>
+
+      <p *ngIf="applyRoundOff?.value && roundOffAmountValue !== 0" class="round-off-amount">
+        Round-off Adjustment: {{ roundOffAmountValue | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}
+      </p>
+      <hr>
+      <p><strong>Grand Total: {{ grandTotalValue | currency:(invoiceForm.get('currency')?.value || defaultCurrencyCode) }}</strong></p>
       <p><small>Amount in Words: {{ amountInWords }}</small></p>
     </div>
 

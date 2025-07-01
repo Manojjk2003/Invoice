@@ -374,35 +374,42 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       } else if (this.invoice.discountType === 'fixed') {
         discountLabel += ` (Fixed)`;
       }
-      currentY = addTotalLine(discountLabel + ':', -this.invoice.discountAmount, currentY); // Show discount as negative
+      currentY = addTotalLine(discountLabel + ':', -this.invoice.discountAmount, currentY);
       const subtotalAfterDiscount = this.invoice.subtotal - this.invoice.discountAmount;
       currentY = addTotalLine('Subtotal After Discount:', subtotalAfterDiscount, currentY);
     }
 
-    // Use GST rate from settings if available, else fallback (e.g. 18% as 0.18)
     const gstRateFromSettings = (this.appSettings?.invoiceSettings?.defaultGstRate !== undefined)
                                ? (this.appSettings.invoiceSettings.defaultGstRate / 100)
-                               : 0.18; // Fallback if not in settings
-    // Note: this.invoice.gst should already be calculated with the correct rate from settings when invoice was created.
-    // For display consistency in PDF, we show the rate applied.
-    // If invoice.gst was calculated with a different rate than current settings, this might be confusing.
-    // For now, assume invoice.gst is the source of truth for the amount, and we display a rate.
-    // A more robust solution would store the applied GST rate on the invoice itself.
+                               : 0.18;
     currentY = addTotalLine(`GST (${(gstRateFromSettings * 100).toFixed(0)}%):`, this.invoice.gst, currentY);
 
-    currentY = addTotalLine('Total Amount:', this.invoice.total, currentY, true);
+    currentY = addTotalLine('Total Before Round-off:', this.invoice.totalBeforeRoundOff, currentY);
+
+    if (this.invoice.roundOffAmount && this.invoice.roundOffAmount !== 0) {
+      currentY = addTotalLine('Round-off:', this.invoice.roundOffAmount, currentY);
+    }
+
+    doc.setFont(bodyFont, 'bold'); // Grand Total is bold
+    if (templateId === 'modern') doc.setTextColor(primaryColor); // Optional: color grand total for modern
+    currentY = addTotalLine('Grand Total:', this.invoice.grandTotal, currentY, true);
+    doc.setTextColor(0,0,0); // Reset color
+    doc.setFont(bodyFont, 'normal'); // Reset font weight
+
     currentY = addTotalLine('Total Paid:', this.invoice.totalPaid, currentY);
+
     doc.setFont(bodyFont, 'bold'); // Balance due always bold
     if (templateId === 'modern') doc.setTextColor(primaryColor);
-    currentY = addTotalLine('Balance Due:', this.invoice.total - this.invoice.totalPaid, currentY, true);
-    doc.setTextColor(0,0,0); // Reset text color after potentially changing it for modern balance due
+    currentY = addTotalLine('Balance Due:', this.invoice.grandTotal - this.invoice.totalPaid, currentY, true);
+    doc.setTextColor(0,0,0);
     currentY = checkPageBreak(currentY);
     currentY += sectionSpacing;
 
     // --- Amount in Words ---
     doc.setFontSize(10);
     doc.setFont(bodyFont, 'normal');
-    currentY = addText(`Amount in Words (Total): ${this.invoice.amountInWords}`, leftMargin, currentY);
+    // this.invoice.amountInWords should already be based on grandTotal from when it was saved
+    currentY = addText(`Amount in Words (Grand Total): ${this.invoice.amountInWords}`, leftMargin, currentY);
     currentY = checkPageBreak(currentY);
     currentY += sectionSpacing;
 

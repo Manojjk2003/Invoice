@@ -75,7 +75,9 @@ export class InvoiceFormComponent implements OnInit {
       // New controls for invoice numbering
       selectedPrefixId: [''], // Will be patched by settings
       invoiceNumberGenerationMode: ['auto', Validators.required],
-      manualInvoiceNumber: [{ value: '', disabled: true }]
+      manualInvoiceNumber: [{ value: '', disabled: true }],
+      // New control for round-off
+      applyRoundOff: [false]
     });
 
     // Subscribe to mode changes to enable/disable manualInvoiceNumber
@@ -379,8 +381,10 @@ export class InvoiceFormComponent implements OnInit {
         discountValue: formValue.discountValue ? Number(formValue.discountValue) : null,
         discountAmount: this.calculatedDiscountAmount,
         gst: this.gst,
-        total: this.total,
-        amountInWords: this.amountInWords,
+        totalBeforeRoundOff: this.calculatedTotal, // Use the getter
+        roundOffAmount: this.applyRoundOff?.value ? this.roundOffAmountValue : undefined, // Use getter, store only if applied
+        grandTotal: this.grandTotalValue, // Use the getter
+        amountInWords: this.amountInWords, // Already uses grandTotalValue
       };
 
       const newInvoiceId = await this.invoiceService.createInvoice(invoiceData);
@@ -468,12 +472,34 @@ export class InvoiceFormComponent implements OnInit {
     return this.subtotalAfterDiscount * this.gstRate;
   }
 
-  get total(): number {
+  // Renamed from 'total'
+  get calculatedTotal(): number {
     return this.subtotalAfterDiscount + this.gst;
   }
 
+  get applyRoundOff(): AbstractControl | null {
+    return this.invoiceForm.get('applyRoundOff');
+  }
+
+  get roundOffAmountValue(): number {
+    if (this.applyRoundOff?.value) {
+      // Ensure calculatedTotal is a number with at most 2 decimal places for precise rounding diff
+      const total = parseFloat(this.calculatedTotal.toFixed(2));
+      const roundedTotal = Math.round(total);
+      return parseFloat((roundedTotal - total).toFixed(2));
+    }
+    return 0;
+  }
+
+  get grandTotalValue(): number {
+    if (this.applyRoundOff?.value) {
+      return Math.round(this.calculatedTotal);
+    }
+    return parseFloat(this.calculatedTotal.toFixed(2)); // Ensure consistent 2 decimal places if not rounding
+  }
+
   get amountInWords(): string {
-    return this.numberToWords(this.total);
+    return this.numberToWords(this.grandTotalValue); // Amount in words should reflect the final grand total
   }
 
   // Basic number to words converter for Indian numbering system (Lakhs, Crores) up to 99 Crores.
@@ -560,7 +586,8 @@ export class InvoiceFormComponent implements OnInit {
       discountValue: null,
       selectedPrefixId: defaultPrefixId,
       invoiceNumberGenerationMode: 'auto',
-      manualInvoiceNumber: '' // Will be disabled by the mode change subscription
+      manualInvoiceNumber: '', // Will be disabled by the mode change subscription
+      applyRoundOff: false // Reset round-off toggle
     });
     this.items.clear();
     this.addItem(); // Add one empty item back

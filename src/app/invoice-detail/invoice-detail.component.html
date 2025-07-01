@@ -78,8 +78,16 @@
           <td class="amount">{{ invoice.gst | currency:effectiveCurrencyCode }}</td>
         </tr>
         <tr>
-          <td class="text-right"><strong>Total Amount:</strong></td>
-          <td class="amount"><strong>{{ invoice.total | currency:effectiveCurrencyCode }}</strong></td>
+          <td class="text-right">Total Before Round-off:</td>
+          <td class="amount">{{ invoice.totalBeforeRoundOff | currency:effectiveCurrencyCode }}</td>
+        </tr>
+        <tr *ngIf="invoice.roundOffAmount && invoice.roundOffAmount !== 0">
+          <td class="text-right">Round-off:</td>
+          <td class="amount">{{ invoice.roundOffAmount | currency:effectiveCurrencyCode }}</td>
+        </tr>
+        <tr>
+          <td class="text-right"><strong>Grand Total:</strong></td>
+          <td class="amount"><strong>{{ invoice.grandTotal | currency:effectiveCurrencyCode }}</strong></td>
         </tr>
         <tr>
           <td class="text-right">Total Paid:</td>
@@ -87,14 +95,14 @@
         </tr>
         <tr>
           <td class="text-right"><strong>Balance Due:</strong></td>
-          <td class="amount"><strong>{{ (invoice.total - invoice.totalPaid) | currency:effectiveCurrencyCode }}</strong></td>
+          <td class="amount"><strong>{{ (invoice.grandTotal - invoice.totalPaid) | currency:effectiveCurrencyCode }}</strong></td>
         </tr>
       </tfoot>
     </table>
   </section>
 
   <section class="invoice-summary">
-    <p><strong>Amount in Words (Total):</strong> {{ invoice.amountInWords }}</p> <!-- Assuming amountInWords is currency agnostic or already includes it -->
+    <p><strong>Amount in Words (Grand Total):</strong> {{ invoice.amountInWords }}</p>
   </section>
 
   <section class="payment-history" *ngIf="payments.length > 0 || isLoadingPayments || paymentErrorMessage">

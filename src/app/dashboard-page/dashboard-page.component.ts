@@ -98,11 +98,11 @@ export class DashboardPageComponent implements OnInit {
 
       this.totalUnpaidValue = invoices
         .filter(inv => inv.paymentStatus === 'Unpaid' || inv.paymentStatus === 'Partially Paid')
-        .reduce((sum, inv) => sum + (inv.total - inv.totalPaid), 0);
+        .reduce((sum, inv) => sum + (inv.grandTotal - inv.totalPaid), 0);
 
       this.totalOverdueValue = invoices
         .filter(inv => inv.paymentStatus === 'Overdue') // Assuming 'Overdue' status is set correctly
-        .reduce((sum, inv) => sum + (inv.total - inv.totalPaid), 0);
+        .reduce((sum, inv) => sum + (inv.grandTotal - inv.totalPaid), 0);
 
       const now = new Date();
       const currentMonth = now.getMonth();
@@ -126,7 +126,7 @@ export class DashboardPageComponent implements OnInit {
             // inv.date is now Date | undefined
             return inv.date && inv.date.getFullYear() === targetDate.getFullYear() && inv.date.getMonth() === targetDate.getMonth();
           })
-          .reduce((sum, inv) => sum + inv.total, 0);
+          .reduce((sum, inv) => sum + inv.grandTotal, 0); // Use grandTotal for bills created value
 
         const monthlyIncomeReceived = allPayments // allPayments' dates are already JS Dates
           .filter(p => p.paymentDate.getFullYear() === targetDate.getFullYear() && p.paymentDate.getMonth() === targetDate.getMonth())

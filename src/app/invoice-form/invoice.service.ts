@@ -103,10 +103,11 @@ export class InvoiceService {
       const newTotalPaid = (invoice.totalPaid || 0) + paymentData.amountPaid;
       let newPaymentStatus: Invoice['paymentStatus'] = 'Partially Paid';
 
-      if (newTotalPaid >= invoice.total) {
+      // Compare against grandTotal for payment status
+      if (newTotalPaid >= invoice.grandTotal) {
         newPaymentStatus = 'Paid';
-      } else if (newTotalPaid === 0) {
-        newPaymentStatus = 'Unpaid'; // Should not happen if adding payment, but good for completeness
+      } else if (newTotalPaid <= 0) { // Check for <= 0 for unpaid status
+        newPaymentStatus = 'Unpaid';
       }
       // Overdue status would need to be checked against dueDate, potentially by a separate process or on load.
 
