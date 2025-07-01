@@ -20,6 +20,7 @@ export class SettingsService {
   }
 
   private getDefaultSettings(): AppSettings {
+    const defaultPrefixId = 'default_inv_prefix';
     return {
       id: this.SETTINGS_DOC_ID,
       companyInformation: {
@@ -32,8 +33,10 @@ export class SettingsService {
       invoiceSettings: {
         defaultTemplateId: DEFAULT_TEMPLATE_ID,
         defaultPaymentTermsDays: 0, // Due on receipt
-        invoiceNumberPrefix: 'INV-',
-        nextInvoiceNumber: 1,
+        invoicePrefixes: [
+          { id: defaultPrefixId, prefix: 'INV-', nextInvoiceNumber: 1 }
+        ],
+        defaultPrefixId: defaultPrefixId,
         autoIncrementInvoiceNumber: true,
         defaultGstRate: 18, // Default to 18%
         defaultCurrencyCode: DEFAULT_CURRENCY_CODE
@@ -96,26 +99,42 @@ export class SettingsService {
   }
 
   // Utility to update only a part of the settings, e.g. nextInvoiceNumber
-  async updateInvoiceNumberSetting(nextInvoiceNumber: number): Promise<void> {
+  // This method is no longer suitable as nextInvoiceNumber is per-prefix.
+  // The InvoiceFormComponent will now be responsible for updating the specific prefix's
+  // nextInvoiceNumber within the AppSettings object and calling saveSettings.
+  // Consider removing this method or adapting it if a specific use case for updating
+  // a single prefix's next number directly via the service is still needed.
+  // For now, it will be commented out to avoid compilation errors and indicate it needs rethinking.
+  /*
+  async updateInvoiceNumberSetting(prefixId: string, nextInvoiceNumber: number): Promise<void> {
     try {
-        await updateDoc(this.settingsDocRef, {
-            'invoiceSettings.nextInvoiceNumber': nextInvoiceNumber,
-            'invoiceSettings.autoIncrementInvoiceNumber': true // Assuming we always want to auto-increment after manual set
-        });
-        this.clearCache();
+      // This is complex because invoicePrefixes is an array.
+      // One would need to read the document, update the array, and write it back.
+      // Or, structure Firestore data differently (e.g., prefixes as a subcollection).
+      // For simplicity with the current structure, updating the whole settings object from
+      // the component after modification is easier.
+      console.warn('updateInvoiceNumberSetting is deprecated. Save the whole AppSettings object.');
+      // Example of how it might be done if absolutely necessary (but error-prone and racy):
+      // const currentSettings = await getDoc(this.settingsDocRef).then(d => d.data());
+      // if (currentSettings && currentSettings.invoiceSettings && currentSettings.invoiceSettings.invoicePrefixes) {
+      //   const prefixSetting = currentSettings.invoiceSettings.invoicePrefixes.find(p => p.id === prefixId);
+      //   if (prefixSetting) {
+      //     prefixSetting.nextInvoiceNumber = nextInvoiceNumber;
+      //     await setDoc(this.settingsDocRef, currentSettings); // Overwrites entire settings
+      //     this.clearCache();
+      //   } else {
+      //     throw new Error(`Prefix with ID ${prefixId} not found.`);
+      //   }
+      // } else {
+      //   throw new Error('Settings or prefixes not found.');
+      // }
+      throw new Error('This method is deprecated. Save the full AppSettings from the component.');
     } catch (error) {
-        // If the document or invoiceSettings field doesn't exist, updateDoc will fail.
-        // This might happen on the very first run if getSettings() defaults were not saved.
-        // A more robust solution might involve ensuring the settings doc exists or using setDoc with merge.
         console.error("Error updating next invoice number directly:", error);
-        // Fallback to saving default settings if the specific update fails, then try again
-        // This is a bit complex for here, usually, ensure settings are saved once.
-        // For now, just rethrow or log.
-        // A simpler approach: just save the full settings object after updating it in the component.
         throw error;
     }
   }
-
+  */
 
   clearCache(): void {
     this.settingsCache$ = null;

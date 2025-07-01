@@ -54,22 +54,56 @@
           <option *ngFor="let term of paymentTermOptions" [value]="term.value">{{ term.label }}</option>
         </select>
       </div>
-      <div class="form-row">
-        <div class="form-group col">
-          <label for="invoiceNumberPrefix">Invoice Number Prefix</label>
-          <input type="text" id="invoiceNumberPrefix" formControlName="invoiceNumberPrefix" class="form-control">
-        </div>
-        <div class="form-group col">
-          <label for="nextInvoiceNumber">Next Invoice Number <span class="required">*</span></label>
-          <input type="number" id="nextInvoiceNumber" formControlName="nextInvoiceNumber" class="form-control">
-          <div *ngIf="settingsForm.get('invoiceSettings.nextInvoiceNumber')?.invalid && settingsForm.get('invoiceSettings.nextInvoiceNumber')?.touched" class="text-danger">
-            Next invoice number must be a positive integer.
+
+      <!-- Invoice Number Prefix Management -->
+      <div formArrayName="invoicePrefixes">
+        <h4>Invoice Number Prefixes</h4>
+        <div *ngFor="let prefixGroup of invoicePrefixesArray.controls; let i=index" [formGroupName]="i" class="prefix-group mb-3 p-3 border rounded">
+          <div class="form-row align-items-end">
+            <div class="col-md-5 form-group">
+              <label for="prefix-{{i}}">Prefix Text <span class="required">*</span></label>
+              <input type="text" id="prefix-{{i}}" class="form-control" formControlName="prefix" placeholder="e.g., INV-, QUOT-">
+              <div *ngIf="prefixGroup.get('prefix')?.invalid && prefixGroup.get('prefix')?.touched" class="text-danger">
+                Prefix is required.
+              </div>
+            </div>
+            <div class="col-md-5 form-group">
+              <label for="nextInvoiceNumber-{{i}}">Next Number <span class="required">*</span></label>
+              <input type="number" id="nextInvoiceNumber-{{i}}" class="form-control" formControlName="nextInvoiceNumber" min="1">
+              <div *ngIf="prefixGroup.get('nextInvoiceNumber')?.invalid && prefixGroup.get('nextInvoiceNumber')?.touched" class="text-danger">
+                Next number must be 1 or greater.
+              </div>
+            </div>
+            <div class="col-md-2 form-group">
+              <button type="button" (click)="removeInvoicePrefix(i)" class="btn btn-danger btn-sm w-100">Remove</button>
+            </div>
           </div>
+          <!-- Hidden input to store the ID, not user-editable but part of the form group -->
+          <input type="hidden" formControlName="id">
+        </div>
+        <button type="button" (click)="addInvoicePrefix()" class="btn btn-secondary btn-sm mb-3">Add New Prefix Configuration</button>
+      </div>
+
+      <div class="form-group" *ngIf="invoicePrefixesArray.length > 0">
+        <label for="defaultPrefixId">Default Invoice Prefix for New Invoices <span class="required">*</span></label>
+        <select id="defaultPrefixId" formControlName="defaultPrefixId" class="form-control">
+          <option value="">-- Select Default Prefix --</option>
+          <option *ngFor="let prefixCtrl of invoicePrefixesArray.controls" [value]="prefixCtrl.get('id')?.value">
+            {{ prefixCtrl.get('prefix')?.value || 'New Prefix' }} (Next: {{prefixCtrl.get('nextInvoiceNumber')?.value}})
+          </option>
+        </select>
+        <div *ngIf="settingsForm.get('invoiceSettings.defaultPrefixId')?.invalid && settingsForm.get('invoiceSettings.defaultPrefixId')?.touched" class="text-danger">
+          A default prefix must be selected.
         </div>
       </div>
-       <div class="form-group">
+      <div class="form-group" *ngIf="invoicePrefixesArray.length === 0">
+        <p class="text-muted">Please add at least one invoice prefix configuration.</p>
+      </div>
+
+
+       <div class="form-group"> <!-- Changed from form-check to form-group for consistent spacing -->
           <input type="checkbox" id="autoIncrementInvoiceNumber" formControlName="autoIncrementInvoiceNumber" class="form-check-input">
-          <label for="autoIncrementInvoiceNumber" class="form-check-label">Automatically increment invoice number after use</label>
+          <label for="autoIncrementInvoiceNumber" class="form-check-label">Automatically increment selected prefix's number after use</label>
       </div>
       <div class="form-group">
         <label for="defaultGstRate">Default GST/Tax Rate (%)</label>

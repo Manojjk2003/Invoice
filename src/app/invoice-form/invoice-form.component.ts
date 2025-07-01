@@ -8,10 +8,11 @@ import {
   Customer, Invoice, InvoiceItem,
   InvoiceTemplate, InvoiceTemplateId, DEFAULT_TEMPLATE_ID,
   Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE,
-  ProductOrService, AppSettings // Added AppSettings
+  ProductOrService, AppSettings, InvoicePrefixSetting // Added AppSettings and InvoicePrefixSetting
 } from '../core/models/app.models'; // Import currency models
 import { ProductService } from '../product.service'; // Added
 import { SettingsService } from '../settings.service'; // Added SettingsService
+import { Subscription } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -36,9 +37,12 @@ export class InvoiceFormComponent implements OnInit {
   isLoadingCustomers = false;
   isSavingCustomer = false;
   isSavingInvoice = false;
-  isLoadingSettings = false; // Added
+  isLoadingSettings = false;
 
-  private appSettings: AppSettings | null = null; // Added
+  appSettings: AppSettings | null = null; // Made public for template access
+  availablePrefixes: InvoicePrefixSetting[] = [];
+  private settingsSubscription!: Subscription;
+
 
   invoiceTemplates: InvoiceTemplate[] = [
     { id: 'classic', name: 'Classic' },
@@ -67,7 +71,24 @@ export class InvoiceFormComponent implements OnInit {
       dueDate: [null], // Added for due date
       items: this.fb.array([]),
       discountType: [null], // 'percentage', 'fixed', or null for no discount
-      discountValue: [null]  // Numerical value of the discount
+      discountValue: [null],  // Numerical value of the discount
+      // New controls for invoice numbering
+      selectedPrefixId: [''], // Will be patched by settings
+      invoiceNumberGenerationMode: ['auto', Validators.required],
+      manualInvoiceNumber: [{ value: '', disabled: true }]
+    });
+
+    // Subscribe to mode changes to enable/disable manualInvoiceNumber
+    this.invoiceForm.get('invoiceNumberGenerationMode')?.valueChanges.subscribe(mode => {
+      const manualInvoiceNumberControl = this.invoiceForm.get('manualInvoiceNumber');
+      if (mode === 'manual') {
+        manualInvoiceNumberControl?.enable();
+        manualInvoiceNumberControl?.setValidators(Validators.required);
+      } else {
+        manualInvoiceNumberControl?.disable();
+        manualInvoiceNumberControl?.clearValidators();
+      }
+      manualInvoiceNumberControl?.updateValueAndValidity();
     });
 
     this.newCustomerForm = this.fb.group({
@@ -91,20 +112,46 @@ export class InvoiceFormComponent implements OnInit {
 
   loadAppSettings(): void {
     this.isLoadingSettings = true;
-    this.settingsService.getSettings().subscribe({
+    // Unsubscribe from previous subscription if any, to prevent memory leaks
+    if (this.settingsSubscription) {
+      this.settingsSubscription.unsubscribe();
+    }
+
+    this.settingsSubscription = this.settingsService.getSettings().subscribe({
       next: (settings) => {
         this.appSettings = settings;
-        if (settings) {
-          // Patch form with settings defaults
+        this.availablePrefixes = settings?.invoiceSettings?.invoicePrefixes || [];
+        let defaultPrefixIdToSet = '';
+
+        if (settings && settings.invoiceSettings) {
+          defaultPrefixIdToSet = settings.invoiceSettings.defaultPrefixId || '';
+          // Ensure the defaultPrefixId actually exists in the available prefixes
+          if (defaultPrefixIdToSet && !this.availablePrefixes.find(p => p.id === defaultPrefixIdToSet)) {
+            console.warn(`Default prefix ID "${defaultPrefixIdToSet}" not found in available prefixes. Falling back.`);
+            defaultPrefixIdToSet = this.availablePrefixes.length > 0 ? this.availablePrefixes[0].id : '';
+          } else if (!defaultPrefixIdToSet && this.availablePrefixes.length > 0) {
+            // If no default is set but prefixes exist, pick the first as default
+            defaultPrefixIdToSet = this.availablePrefixes[0].id;
+          }
+
           this.invoiceForm.patchValue({
             clientManager: settings.userProfileSettings?.userName || '',
-            templateId: settings.invoiceSettings?.defaultTemplateId || DEFAULT_TEMPLATE_ID,
-            currency: settings.invoiceSettings?.defaultCurrencyCode || DEFAULT_CURRENCY_CODE,
-            // Due date will be calculated based on payment terms later or can be set here if simple
+            templateId: settings.invoiceSettings.defaultTemplateId || DEFAULT_TEMPLATE_ID,
+            currency: settings.invoiceSettings.defaultCurrencyCode || DEFAULT_CURRENCY_CODE,
+            selectedPrefixId: defaultPrefixIdToSet,
+            // invoiceNumberGenerationMode and manualInvoiceNumber are handled by their own logic
           });
-          // Update gstRate based on settings
-          // this.gstRate = (settings.invoiceSettings?.defaultGstRate || 0) / 100; // Getter will handle this
+        } else {
+          // Handle case where settings might be null (though service provides defaults)
+           this.invoiceForm.patchValue({
+            clientManager:  '',
+            templateId: DEFAULT_TEMPLATE_ID,
+            currency:  DEFAULT_CURRENCY_CODE,
+            selectedPrefixId: this.availablePrefixes.length > 0 ? this.availablePrefixes[0].id : '',
+          });
         }
+        // Trigger manualInvoiceNumber enable/disable based on current mode
+        this.invoiceForm.get('invoiceNumberGenerationMode')?.updateValueAndValidity({ emitEvent: true });
         this.isLoadingSettings = false;
       },
       error: (err) => {
@@ -271,17 +318,34 @@ export class InvoiceFormComponent implements OnInit {
     // let logoUrl = this.invoiceForm.get('logo')?.value || ''; // Logo URL is not set per invoice anymore
 
     try {
-      const formValue = this.invoiceForm.getRawValue(); // Use getRawValue to include disabled fields like lineTotal
+      const formValue = this.invoiceForm.getRawValue();
       let invoiceNumber = '';
-      let nextInvoiceNum = 1;
 
-      if (this.appSettings && this.appSettings.invoiceSettings) {
-        const prefix = this.appSettings.invoiceSettings.invoiceNumberPrefix || '';
-        nextInvoiceNum = this.appSettings.invoiceSettings.nextInvoiceNumber || 1;
-        invoiceNumber = `${prefix}${nextInvoiceNum}`;
-      } else {
-        // Fallback if settings not loaded (should ideally not happen or be handled more gracefully)
-        invoiceNumber = `INV-${new Date().getTime()}`; // Simple fallback
+      const generationMode = formValue.invoiceNumberGenerationMode;
+
+      if (generationMode === 'auto') {
+        if (!this.appSettings || !this.appSettings.invoiceSettings || !this.appSettings.invoiceSettings.invoicePrefixes) {
+          this.errorMessage = 'Invoice prefix settings are not loaded. Cannot generate invoice number.';
+          this.isSavingInvoice = false;
+          return;
+        }
+        const selectedPrefixId = formValue.selectedPrefixId;
+        const prefixSetting = this.appSettings.invoiceSettings.invoicePrefixes.find(p => p.id === selectedPrefixId);
+
+        if (!prefixSetting) {
+          this.errorMessage = 'Selected invoice prefix configuration not found. Please check settings.';
+          this.isSavingInvoice = false;
+          return;
+        }
+        invoiceNumber = `${prefixSetting.prefix}${prefixSetting.nextInvoiceNumber}`;
+      } else { // Manual mode
+        invoiceNumber = formValue.manualInvoiceNumber;
+        if (!invoiceNumber || invoiceNumber.trim() === '') {
+           this.errorMessage = 'Manual invoice number cannot be empty.';
+           this.invoiceForm.get('manualInvoiceNumber')?.setErrors({ required: true });
+           this.isSavingInvoice = false;
+           return;
+        }
       }
 
       let dueDate: Date | undefined = undefined;
@@ -322,31 +386,37 @@ export class InvoiceFormComponent implements OnInit {
       const newInvoiceId = await this.invoiceService.createInvoice(invoiceData);
       this.successMessage = `Invoice ${invoiceNumber} saved successfully! (ID: ${newInvoiceId})`;
 
-      // Increment next invoice number in settings if auto-increment is enabled
-      if (this.appSettings?.invoiceSettings?.autoIncrementInvoiceNumber && this.appSettings?.invoiceSettings) {
-        const newNextNumber = (this.appSettings.invoiceSettings.nextInvoiceNumber || 1) + 1;
-        // Update the local cache first for immediate reflection if needed, then save
-        this.appSettings.invoiceSettings.nextInvoiceNumber = newNextNumber;
-        // This specific update is tricky; might be better to save the whole appSettings object
-        // or have a dedicated method in SettingsService that handles this update robustly.
-        // For now, we'll rely on a full settings save if this component had a save button for its own defaults.
-        // Or, more simply, the SettingsComponent is responsible for updating nextInvoiceNumber.
-        // Let's assume SettingsService.updateInvoiceNumberSetting is robust or we save full settings.
-        try {
-            // Create a new AppSettings object with the updated nextInvoiceNumber
-            const updatedSettings: AppSettings = JSON.parse(JSON.stringify(this.appSettings)); // Deep copy
-            if (updatedSettings.invoiceSettings) {
-                updatedSettings.invoiceSettings.nextInvoiceNumber = newNextNumber;
+      // Increment next invoice number in settings if auto-generation and auto-increment are enabled
+      if (generationMode === 'auto' &&
+          this.appSettings &&
+          this.appSettings.invoiceSettings &&
+          this.appSettings.invoiceSettings.autoIncrementInvoiceNumber) {
+
+        const selectedPrefixId = formValue.selectedPrefixId;
+        // Create a deep copy of appSettings to modify, ensuring invoicePrefixes is also copied.
+        const updatedSettings: AppSettings = JSON.parse(JSON.stringify(this.appSettings));
+
+        if (updatedSettings.invoiceSettings && updatedSettings.invoiceSettings.invoicePrefixes) {
+          const prefixSettingToUpdate = updatedSettings.invoiceSettings.invoicePrefixes.find(p => p.id === selectedPrefixId);
+          if (prefixSettingToUpdate) {
+            prefixSettingToUpdate.nextInvoiceNumber += 1;
+            try {
+              await this.settingsService.saveSettings(updatedSettings);
+              // Update the local appSettings to reflect the change for the next invoice within this session
+              this.appSettings = updatedSettings;
+              this.availablePrefixes = updatedSettings.invoiceSettings.invoicePrefixes; // Refresh available prefixes view if needed
+            } catch (settingsError) {
+              console.error("Failed to update next invoice number in settings:", settingsError);
+              // Append to success message or set a separate warning
+              this.successMessage += " (Warning: Failed to update next invoice number in settings.)";
             }
-            await this.settingsService.saveSettings(updatedSettings);
-        } catch (settingsError) {
-            console.error("Failed to update next invoice number in settings:", settingsError);
-            // Non-critical for invoice creation itself, but admin should be aware.
-            this.errorMessage = "Invoice saved, but failed to update next invoice number in settings.";
+          } else {
+            console.error("Selected prefix for increment not found in updatedSettings. This should not happen.");
+          }
         }
       }
 
-      this.resetInvoiceForm(); // Call new reset method
+      this.resetInvoiceForm();
 
     } catch (error) {
       this.errorMessage = 'Failed to save invoice. Please try again.';
@@ -477,21 +547,34 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   private resetInvoiceForm(): void {
+    const defaultPrefixId = this.appSettings?.invoiceSettings?.defaultPrefixId ||
+                           (this.availablePrefixes.length > 0 ? this.availablePrefixes[0].id : '');
+
     this.invoiceForm.reset({
       customer: '',
-      // Apply defaults from settings again
       clientManager: this.appSettings?.userProfileSettings?.userName || '',
       templateId: this.appSettings?.invoiceSettings?.defaultTemplateId || DEFAULT_TEMPLATE_ID,
       currency: this.appSettings?.invoiceSettings?.defaultCurrencyCode || DEFAULT_CURRENCY_CODE,
-      dueDate: null, // Clear due date
+      dueDate: null,
       discountType: null,
-      discountValue: null
+      discountValue: null,
+      selectedPrefixId: defaultPrefixId,
+      invoiceNumberGenerationMode: 'auto',
+      manualInvoiceNumber: '' // Will be disabled by the mode change subscription
     });
     this.items.clear();
     this.addItem(); // Add one empty item back
 
-    // Clear success/error messages for the form itself, but might leave saveInvoice related messages if they are separate
-    // this.successMessage = null; // Handled by saveInvoice itself with timeout
-    // this.errorMessage = null; // Handled by saveInvoice itself with timeout
+    // Explicitly update the state of manualInvoiceNumber control based on the reset mode
+     const manualInvoiceNumberControl = this.invoiceForm.get('manualInvoiceNumber');
+    manualInvoiceNumberControl?.disable();
+    manualInvoiceNumberControl?.clearValidators();
+    manualInvoiceNumberControl?.updateValueAndValidity();
+  }
+
+  ngOnDestroy(): void {
+    if (this.settingsSubscription) {
+      this.settingsSubscription.unsubscribe();
+    }
   }
 }

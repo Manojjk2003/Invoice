@@ -126,12 +126,18 @@ export interface CompanyInformation {
   // logoUrl is handled via assets, not here
 }
 
+export interface InvoicePrefixSetting {
+  id: string; // Unique ID for this prefix configuration
+  prefix: string; // e.g., "INV-", "QUOT-"
+  nextInvoiceNumber: number;
+}
+
 export interface InvoiceSettings {
   defaultTemplateId?: InvoiceTemplateId;
   defaultPaymentTermsDays?: number; // e.g., 0 for Due on Receipt, 15 for Net 15
-  invoiceNumberPrefix?: string;
-  nextInvoiceNumber?: number;
-  autoIncrementInvoiceNumber?: boolean; // For enabling/disabling automatic increment
+  invoicePrefixes: InvoicePrefixSetting[]; // Array to hold multiple prefix configurations
+  defaultPrefixId?: string; // ID of the prefix to be used by default
+  autoIncrementInvoiceNumber?: boolean; // Applies to the selected prefix for auto-generation
   defaultGstRate?: number; // Percentage, e.g., 18 for 18%
   defaultCurrencyCode?: CurrencyCode;
 }
