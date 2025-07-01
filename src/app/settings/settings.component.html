@@ -1,0 +1,127 @@
+<div class="settings-container">
+  <h1>Application Settings</h1>
+
+  <div *ngIf="isLoading" class="loading-indicator">Loading settings...</div>
+
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+  <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading">
+
+    <!-- Company Information -->
+    <fieldset formGroupName="companyInformation" class="settings-section">
+      <legend>Company Information</legend>
+      <div class="form-group">
+        <label for="companyName">Company Name <span class="required">*</span></label>
+        <input type="text" id="companyName" formControlName="companyName" class="form-control">
+        <div *ngIf="settingsForm.get('companyInformation.companyName')?.invalid && settingsForm.get('companyInformation.companyName')?.touched" class="text-danger">
+          Company name is required.
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="companyAddress">Address</label>
+        <textarea id="companyAddress" formControlName="address" class="form-control" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="companyEmail">Email</label>
+        <input type="email" id="companyEmail" formControlName="email" class="form-control">
+        <div *ngIf="settingsForm.get('companyInformation.email')?.invalid && settingsForm.get('companyInformation.email')?.touched" class="text-danger">
+          Invalid email format.
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="companyPhone">Phone</label>
+        <input type="tel" id="companyPhone" formControlName="phone" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="companyGst">GST/Tax ID</label>
+        <input type="text" id="companyGst" formControlName="gstOrTaxId" class="form-control">
+      </div>
+    </fieldset>
+
+    <!-- Invoice Settings -->
+    <fieldset formGroupName="invoiceSettings" class="settings-section">
+      <legend>Invoice Settings</legend>
+      <div class="form-group">
+        <label for="defaultTemplateId">Default Invoice Template <span class="required">*</span></label>
+        <select id="defaultTemplateId" formControlName="defaultTemplateId" class="form-control">
+          <option *ngFor="let template of invoiceTemplates" [value]="template.id">{{ template.name }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="defaultPaymentTermsDays">Default Payment Terms <span class="required">*</span></label>
+        <select id="defaultPaymentTermsDays" formControlName="defaultPaymentTermsDays" class="form-control">
+          <option *ngFor="let term of paymentTermOptions" [value]="term.value">{{ term.label }}</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group col">
+          <label for="invoiceNumberPrefix">Invoice Number Prefix</label>
+          <input type="text" id="invoiceNumberPrefix" formControlName="invoiceNumberPrefix" class="form-control">
+        </div>
+        <div class="form-group col">
+          <label for="nextInvoiceNumber">Next Invoice Number <span class="required">*</span></label>
+          <input type="number" id="nextInvoiceNumber" formControlName="nextInvoiceNumber" class="form-control">
+          <div *ngIf="settingsForm.get('invoiceSettings.nextInvoiceNumber')?.invalid && settingsForm.get('invoiceSettings.nextInvoiceNumber')?.touched" class="text-danger">
+            Next invoice number must be a positive integer.
+          </div>
+        </div>
+      </div>
+       <div class="form-group">
+          <input type="checkbox" id="autoIncrementInvoiceNumber" formControlName="autoIncrementInvoiceNumber" class="form-check-input">
+          <label for="autoIncrementInvoiceNumber" class="form-check-label">Automatically increment invoice number after use</label>
+      </div>
+      <div class="form-group">
+        <label for="defaultGstRate">Default GST/Tax Rate (%)</label>
+        <input type="number" id="defaultGstRate" formControlName="defaultGstRate" class="form-control" step="0.01">
+         <div *ngIf="settingsForm.get('invoiceSettings.defaultGstRate')?.invalid && settingsForm.get('invoiceSettings.defaultGstRate')?.touched" class="text-danger">
+            GST rate must be between 0 and 100.
+          </div>
+      </div>
+      <div class="form-group">
+        <label for="defaultCurrencyCode">Default Currency <span class="required">*</span></label>
+        <select id="defaultCurrencyCode" formControlName="defaultCurrencyCode" class="form-control">
+          <option *ngFor="let currency of supportedCurrencies" [value]="currency.code">
+            {{ currency.name }} ({{ currency.symbol }})
+          </option>
+        </select>
+      </div>
+    </fieldset>
+
+    <!-- Payment Settings -->
+    <fieldset formGroupName="paymentSettings" class="settings-section">
+      <legend>Payment Settings</legend>
+      <div class="form-group">
+        <label for="acceptedPaymentMethodsDetails">Accepted Payment Methods Details</label>
+        <textarea id="acceptedPaymentMethodsDetails" formControlName="acceptedPaymentMethodsDetails" class="form-control" rows="5"
+                  placeholder="e.g., Bank Transfer: Account Name, Account Number, Bank, IFSC. UPI ID: yourid@upi"></textarea>
+        <small class="form-text text-muted">This information will be displayed on your invoices.</small>
+      </div>
+    </fieldset>
+
+    <!-- User Profile Settings -->
+    <fieldset formGroupName="userProfileSettings" class="settings-section">
+      <legend>User Profile</legend>
+      <div class="form-group">
+        <label for="userName">Your Name (Default Client Manager) <span class="required">*</span></label>
+        <input type="text" id="userName" formControlName="userName" class="form-control">
+         <div *ngIf="settingsForm.get('userProfileSettings.userName')?.invalid && settingsForm.get('userProfileSettings.userName')?.touched" class="text-danger">
+            Your name is required.
+          </div>
+      </div>
+      <div class="form-group">
+        <label for="userEmail">Your Email</label>
+        <input type="email" id="userEmail" formControlName="userEmail" class="form-control">
+        <div *ngIf="settingsForm.get('userProfileSettings.userEmail')?.invalid && settingsForm.get('userProfileSettings.userEmail')?.touched" class="text-danger">
+            Invalid email format.
+          </div>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="settingsForm.invalid || isLoading">
+        {{ isLoading ? 'Saving...' : 'Save Settings' }}
+      </button>
+    </div>
+  </form>
+</div>

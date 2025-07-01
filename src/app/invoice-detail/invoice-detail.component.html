@@ -1,17 +1,22 @@
 <div class="invoice-detail-wrapper"
      *ngIf="!isLoading && !errorMessage && invoice && customer"
-     [ngClass]="'template-' + (invoice.templateId || defaultTemplateId)">
+     [ngClass]="'template-' + (invoice.templateId || defaultTemplateIdLocal)">
   <div class="invoice-detail-container"> <!-- Existing container for content structure -->
     <header class="invoice-header">
       <div class="logo-container">
       <!-- Always show default logo container; image itself will be from default path -->
-      <img [src]="defaultCompanyLogoUrl" alt="Company Logo" class="company-logo">
+      <img src="assets/images/default-logo.png" alt="Company Logo" class="company-logo">
     </div>
     <div class="company-details">
       <h2>INVOICE</h2>
-      <p><strong>{{ defaultCompanyName }}</strong></p>
-      <p>{{ defaultCompanyAddress }}</p>
-      <p>{{ defaultCompanyContact }}</p>
+      <p><strong>{{ appSettings?.companyInformation?.companyName || 'Your Company Name' }}</strong></p>
+      <p *ngIf="appSettings?.companyInformation?.address">{{ appSettings?.companyInformation?.address }}</p>
+      <p>
+        <span *ngIf="appSettings?.companyInformation?.email">{{ appSettings?.companyInformation?.email }}</span>
+        <span *ngIf="appSettings?.companyInformation?.email && appSettings?.companyInformation?.phone"> | </span>
+        <span *ngIf="appSettings?.companyInformation?.phone">{{ appSettings?.companyInformation?.phone }}</span>
+      </p>
+      <p *ngIf="appSettings?.companyInformation?.gstOrTaxId">GST/Tax ID: {{ appSettings?.companyInformation?.gstOrTaxId }}</p>
     </div>
   </header>
 

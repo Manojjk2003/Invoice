@@ -115,3 +115,40 @@ export interface Vendor {
   address?: string;
   notes?: string; // General notes about the vendor
 }
+
+// Settings Page Models
+export interface CompanyInformation {
+  companyName?: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+  gstOrTaxId?: string;
+  // logoUrl is handled via assets, not here
+}
+
+export interface InvoiceSettings {
+  defaultTemplateId?: InvoiceTemplateId;
+  defaultPaymentTermsDays?: number; // e.g., 0 for Due on Receipt, 15 for Net 15
+  invoiceNumberPrefix?: string;
+  nextInvoiceNumber?: number;
+  autoIncrementInvoiceNumber?: boolean; // For enabling/disabling automatic increment
+  defaultGstRate?: number; // Percentage, e.g., 18 for 18%
+  defaultCurrencyCode?: CurrencyCode;
+}
+
+export interface PaymentSettings {
+  acceptedPaymentMethodsDetails?: string; // Multi-line string for bank details, UPI, etc.
+}
+
+export interface UserProfileSettings {
+  userName?: string; // Default client manager
+  userEmail?: string; // For reference or future notification features
+}
+
+export interface AppSettings {
+  id?: string; // Document ID in Firestore, e.g., 'user_default'
+  companyInformation?: CompanyInformation;
+  invoiceSettings?: InvoiceSettings;
+  paymentSettings?: PaymentSettings;
+  userProfileSettings?: UserProfileSettings;
+}

@@ -3,7 +3,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { ExpenseService } from '../expense.service';
 import { VendorService } from '../vendor.service'; // Added VendorService
-import { Expense, Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE, Vendor } from '../core/models/app.models'; // Import Vendor model
+import { SettingsService } from '../settings.service'; // Added SettingsService
+import { Expense, Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE, Vendor, AppSettings } from '../core/models/app.models'; // Import AppSettings
 
 @Component({
   selector: 'app-expense-form',
@@ -28,18 +29,23 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
   expenseCategories: string[] = ['Office Supplies', 'Travel', 'Software', 'Utilities', 'Meals', 'Marketing', 'Other'];
   supportedCurrencies: Currency[] = SUPPORTED_CURRENCIES;
 
-  vendors: Vendor[] = []; // Added for vendor selection
-  isLoadingVendors = false; // Added
+  vendors: Vendor[] = [];
+  isLoadingVendors = false;
+
+  private appSettings: AppSettings | null = null; // Added
+  isLoadingSettings = false; // Added
 
   constructor(
     private fb: FormBuilder,
     private expenseService: ExpenseService,
-    private vendorService: VendorService // Added
+    private vendorService: VendorService, // Added
+    private settingsService: SettingsService // Added
   ) {}
 
   ngOnInit(): void {
-    this.initializeForm();
-    this.loadVendors(); // Added call
+    this.loadAppSettings(); // Load settings first
+    this.initializeForm(); // Initialize form (will use defaults or wait for settings)
+    this.loadVendors();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -68,7 +74,12 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
       category: [this.expenseToEdit?.category || this.expenseCategories[0], Validators.required],
       description: [this.expenseToEdit?.description || '', Validators.required],
       amount: [this.expenseToEdit?.amount || null, [Validators.required, Validators.min(0.01)]],
-      currency: [this.expenseToEdit?.currency || DEFAULT_CURRENCY_CODE, Validators.required], // Added currency
+      currency: [
+        this.expenseToEdit?.currency ||
+        this.appSettings?.invoiceSettings?.defaultCurrencyCode ||
+        DEFAULT_CURRENCY_CODE,
+        Validators.required
+      ],
       vendor: [this.expenseToEdit?.vendor || ''],
       receipt: [null] // For the file input, not directly part of Expense model
     });
@@ -78,6 +89,33 @@ export class ExpenseFormComponent implements OnInit, OnChanges {
         this.existingReceiptUrl = null;
     }
     this.receiptFile = null;
+  }
+
+  loadAppSettings(): void {
+    this.isLoadingSettings = true;
+    this.settingsService.getSettings().subscribe({
+      next: (settings) => {
+        this.appSettings = settings;
+        this.isLoadingSettings = false;
+        // After settings are loaded, re-initialize form if it's already built
+        // or rely on initializeForm using appSettings if called after this completes.
+        // For simplicity, we can call patchValue here if form is built.
+        if (this.expenseForm && settings?.invoiceSettings?.defaultCurrencyCode) {
+          this.expenseForm.patchValue({
+            currency: this.expenseToEdit?.currency || settings.invoiceSettings.defaultCurrencyCode
+          });
+        } else if (this.expenseForm) {
+             this.expenseForm.patchValue({
+            currency: this.expenseToEdit?.currency || DEFAULT_CURRENCY_CODE
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error loading app settings for expense form:', err);
+        this.isLoadingSettings = false;
+        // Form will use hardcoded defaults if settings fail to load.
+      }
+    });
   }
 
   loadVendors(): void {

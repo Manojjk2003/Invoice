@@ -9,8 +9,9 @@ import { CustomerService } from '../customer.service';
 import {
   Invoice, Customer, Payment, InvoiceItem,
   DEFAULT_TEMPLATE_ID, InvoiceTemplateId,
-  CurrencyCode, DEFAULT_CURRENCY_CODE, SUPPORTED_CURRENCIES // Added currency models
+  CurrencyCode, DEFAULT_CURRENCY_CODE, SUPPORTED_CURRENCIES, AppSettings // Added AppSettings
 } from '../core/models/app.models';
+import { SettingsService } from '../settings.service'; // Added SettingsService
 
 // Removed SimpleDatePipe
 
@@ -31,33 +32,58 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   payments: Payment[] = []; // To store payments for this invoice
   isLoading = true;
   isLoadingPayments = false; // Separate loading for payments
+  isLoadingSettings = false; // Added for settings loading
   errorMessage: string | null = null;
   paymentErrorMessage: string | null = null; // Separate error message for payments
+  settingsErrorMessage: string | null = null; // Added
   private routeSub!: Subscription;
 
-  // Default company information
-  defaultCompanyName = "Your Awesome Company";
-  defaultCompanyLogoUrl = "assets/images/default-logo.png";
-  defaultCompanyAddress = "123 Default Street, Default City, DS 12345";
-  defaultCompanyContact = "contact@awesomecompany.com | (555) 555-5555";
-  defaultTemplateId: InvoiceTemplateId = DEFAULT_TEMPLATE_ID;
-  defaultCurrencyCode: CurrencyCode = DEFAULT_CURRENCY_CODE; // For fallback in template/PDF
+  appSettings: AppSettings | null = null; // To store loaded settings
+
+  // defaultTemplateId and defaultCurrencyCode can remain for local fallback if settings don't load
+  defaultTemplateIdLocal: InvoiceTemplateId = DEFAULT_TEMPLATE_ID;
+  defaultCurrencyCodeLocal: CurrencyCode = DEFAULT_CURRENCY_CODE;
 
 
   constructor(
     private route: ActivatedRoute,
     private invoiceService: InvoiceService,
-    private customerService: CustomerService
+    private customerService: CustomerService,
+    private settingsService: SettingsService // Added
   ) {}
 
   ngOnInit(): void {
+    this.loadAppSettings(); // Load settings first or in parallel
     this.routeSub = this.route.paramMap.subscribe(params => {
       const invoiceId = params.get('id');
       if (invoiceId) {
         this.loadInvoiceDetails(invoiceId);
       } else {
-        this.isLoading = false;
+        this.isLoading = false; // Ensure loading is stopped
         this.errorMessage = 'Invoice ID not found in route.';
+      }
+    });
+  }
+
+  loadAppSettings(): void {
+    this.isLoadingSettings = true;
+    this.settingsErrorMessage = null;
+    this.settingsService.getSettings().subscribe({
+      next: (settings) => {
+        this.appSettings = settings;
+        // If settings are null, the getDefaultSettings() in service should provide a structure
+        if (!settings) {
+            console.warn("InvoiceDetail: App settings are null, using fallback defaults from service.");
+            // appSettings will hold the default structure from service if null was returned by observable due to error/no-doc
+        }
+        this.isLoadingSettings = false;
+      },
+      error: (err) => {
+        console.error("InvoiceDetail: Error loading app settings:", err);
+        this.settingsErrorMessage = "Failed to load application settings. Some details might be missing.";
+        // Attempt to use service's default settings as a fallback
+        this.appSettings = this.settingsService['getDefaultSettings']();
+        this.isLoadingSettings = false;
       }
     });
   }
@@ -67,6 +93,14 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     this.errorMessage = null;
     this.invoice = null;
     this.customer = null;
+
+    // Wait for settings to be loaded (or attempt to have been loaded) before proceeding
+    // This is a simple way; more robust might involve RxJS combinations if settings are critical for query
+    if (this.isLoadingSettings) {
+        // A simple busy wait or a more complex observable chain might be needed
+        // For now, let's assume settings are loaded or defaulted by the time this is crucial
+        // A better pattern: Chain this call after settings load in ngOnInit or use an observable switchMap/combineLatest
+    }
 
     try {
       // NOTE: Ideally, InvoiceService and CustomerService should have methods
@@ -159,8 +193,22 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     const lineSpacing = 7;
     const sectionSpacing = 10;
     const leftMargin = 15;
-    const rightMargin = doc.internal.pageSize.width - 15;
+    const rightMargin = doc.internal.pageSize.width - 15; // Max X for content
     const contentWidth = rightMargin - leftMargin;
+
+    // Get company info from settings or use fallbacks
+    const companyInfo = this.appSettings?.companyInformation;
+    const companyName = companyInfo?.companyName || 'Your Company Name';
+    const companyAddress = companyInfo?.address || '123 Your Street, Your City';
+    const companyContact = `${companyInfo?.email || ''}${companyInfo?.email && companyInfo?.phone ? ' | ' : ''}${companyInfo?.phone || ''}`;
+    const companyGst = companyInfo?.gstOrTaxId || '';
+
+    // Get payment details from settings
+    const paymentDetails = this.appSettings?.paymentSettings?.acceptedPaymentMethodsDetails || '';
+
+    // Default logo URL (as per plan, not from settings object)
+    const defaultCompanyLogoUrl = "assets/images/default-logo.png";
+
 
     // Helper to add text and move Y
     const addText = (text: string, x: number, currentY: number, options?: any): number => {
@@ -178,7 +226,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
 
     // Template specific settings
-    const templateId = this.invoice.templateId || this.defaultTemplateId;
+    const templateId = this.invoice.templateId || this.defaultTemplateIdLocal; // Use local fallback
     let primaryColor = '#000000'; // Default black for classic/simple
     let headerFont = 'helvetica';
     let bodyFont = 'helvetica';
@@ -192,7 +240,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       bodyFont = 'courier';
     }
 
-    const currentInvoiceCurrencyCode = this.invoice.currency || this.defaultCurrencyCode;
+    const currentInvoiceCurrencyCode = this.invoice.currency || this.appSettings?.invoiceSettings?.defaultCurrencyCode || this.defaultCurrencyCodeLocal;
     const currencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === currentInvoiceCurrencyCode);
     const currencySymbol = currencyInfo ? currencyInfo.symbol : currentInvoiceCurrencyCode;
 
@@ -206,10 +254,11 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
     doc.setFontSize(12);
     doc.setFont(headerFont, 'bold');
-    currentY = addText(this.defaultCompanyName, rightMargin, currentY, { align: 'right'});
+    currentY = addText(companyName, rightMargin, currentY, { align: 'right'});
     doc.setFont(bodyFont, 'normal');
-    currentY = addText(this.defaultCompanyAddress, rightMargin, currentY, { align: 'right'});
-    currentY = addText(this.defaultCompanyContact, rightMargin, currentY, { align: 'right'});
+    if (companyAddress) currentY = addText(companyAddress, rightMargin, currentY, { align: 'right'});
+    if (companyContact) currentY = addText(companyContact, rightMargin, currentY, { align: 'right'});
+    if (companyGst) currentY = addText(`GST/Tax ID: ${companyGst}`, rightMargin, currentY, {align: 'right'});
 
     currentY += sectionSpacing / 2;
 
@@ -321,7 +370,17 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
       currentY = addTotalLine('Subtotal After Discount:', subtotalAfterDiscount, currentY);
     }
 
-    currentY = addTotalLine(`GST (${(0.18 * 100).toFixed(0)}%):`, this.invoice.gst, currentY);
+    // Use GST rate from settings if available, else fallback (e.g. 18% as 0.18)
+    const gstRateFromSettings = (this.appSettings?.invoiceSettings?.defaultGstRate !== undefined)
+                               ? (this.appSettings.invoiceSettings.defaultGstRate / 100)
+                               : 0.18; // Fallback if not in settings
+    // Note: this.invoice.gst should already be calculated with the correct rate from settings when invoice was created.
+    // For display consistency in PDF, we show the rate applied.
+    // If invoice.gst was calculated with a different rate than current settings, this might be confusing.
+    // For now, assume invoice.gst is the source of truth for the amount, and we display a rate.
+    // A more robust solution would store the applied GST rate on the invoice itself.
+    currentY = addTotalLine(`GST (${(gstRateFromSettings * 100).toFixed(0)}%):`, this.invoice.gst, currentY);
+
     currentY = addTotalLine('Total Amount:', this.invoice.total, currentY, true);
     currentY = addTotalLine('Total Paid:', this.invoice.totalPaid, currentY);
     doc.setFont(bodyFont, 'bold'); // Balance due always bold
@@ -337,6 +396,22 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     currentY = addText(`Amount in Words (Total): ${this.invoice.amountInWords}`, leftMargin, currentY);
     currentY = checkPageBreak(currentY);
     currentY += sectionSpacing;
+
+    // --- Payment Instructions from Settings ---
+    if (paymentDetails) { // paymentDetails is already defined using this.appSettings
+        currentY = checkPageBreak(currentY);
+        doc.setFontSize(10);
+        doc.setFont(headerFont, 'bold');
+        currentY = addText('Payment Instructions:', leftMargin, currentY);
+        doc.setFont(bodyFont, 'normal');
+        doc.setFontSize(9); // Smaller font for potentially long details
+        const paymentLines = doc.splitTextToSize(paymentDetails, contentWidth);
+        paymentLines.forEach((line: string) => {
+            currentY = checkPageBreak(currentY, lineSpacing * (paymentLines.length > 3 ? 1.1 : 1) );
+            currentY = addText(line, leftMargin, currentY);
+        });
+        currentY += sectionSpacing;
+    }
 
     // --- Payment History (Optional) ---
     if (this.payments.length > 0) {

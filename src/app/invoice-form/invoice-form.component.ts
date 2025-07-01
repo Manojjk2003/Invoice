@@ -8,9 +8,10 @@ import {
   Customer, Invoice, InvoiceItem,
   InvoiceTemplate, InvoiceTemplateId, DEFAULT_TEMPLATE_ID,
   Currency, CurrencyCode, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY_CODE,
-  ProductOrService // Added
+  ProductOrService, AppSettings // Added AppSettings
 } from '../core/models/app.models'; // Import currency models
 import { ProductService } from '../product.service'; // Added
+import { SettingsService } from '../settings.service'; // Added SettingsService
 
 @Component({
   standalone: true,
@@ -35,6 +36,9 @@ export class InvoiceFormComponent implements OnInit {
   isLoadingCustomers = false;
   isSavingCustomer = false;
   isSavingInvoice = false;
+  isLoadingSettings = false; // Added
+
+  private appSettings: AppSettings | null = null; // Added
 
   invoiceTemplates: InvoiceTemplate[] = [
     { id: 'classic', name: 'Classic' },
@@ -49,15 +53,18 @@ export class InvoiceFormComponent implements OnInit {
     private fb: FormBuilder,
     private invoiceService: InvoiceService,
     private customerService: CustomerService,
-    private productService: ProductService // Added
+    private productService: ProductService, // Added
+    private settingsService: SettingsService // Added
   ) {}
 
   ngOnInit(): void {
+    // Initialize form with basic structure first
     this.invoiceForm = this.fb.group({
       customer: ['', Validators.required],
-      clientManager: ['', Validators.required],
-      templateId: [DEFAULT_TEMPLATE_ID, Validators.required],
-      currency: [DEFAULT_CURRENCY_CODE, Validators.required],
+      clientManager: ['', Validators.required], // Will be updated by settings
+      templateId: [DEFAULT_TEMPLATE_ID, Validators.required], // Will be updated by settings
+      currency: [DEFAULT_CURRENCY_CODE, Validators.required], // Will be updated by settings
+      dueDate: [null], // Added for due date
       items: this.fb.array([]),
       discountType: [null], // 'percentage', 'fixed', or null for no discount
       discountValue: [null]  // Numerical value of the discount
@@ -76,9 +83,36 @@ export class InvoiceFormComponent implements OnInit {
       contact: [''] // General contact person, no specific validation here
     });
 
+    this.loadAppSettings(); // Load settings first
     this.loadCustomers();
     this.loadProducts(); // Added
     this.addItem(); // Add an initial line item
+  }
+
+  loadAppSettings(): void {
+    this.isLoadingSettings = true;
+    this.settingsService.getSettings().subscribe({
+      next: (settings) => {
+        this.appSettings = settings;
+        if (settings) {
+          // Patch form with settings defaults
+          this.invoiceForm.patchValue({
+            clientManager: settings.userProfileSettings?.userName || '',
+            templateId: settings.invoiceSettings?.defaultTemplateId || DEFAULT_TEMPLATE_ID,
+            currency: settings.invoiceSettings?.defaultCurrencyCode || DEFAULT_CURRENCY_CODE,
+            // Due date will be calculated based on payment terms later or can be set here if simple
+          });
+          // Update gstRate based on settings
+          // this.gstRate = (settings.invoiceSettings?.defaultGstRate || 0) / 100; // Getter will handle this
+        }
+        this.isLoadingSettings = false;
+      },
+      error: (err) => {
+        console.error('Error loading app settings for invoice form:', err);
+        this.errorMessage = 'Failed to load application settings. Using defaults.';
+        this.isLoadingSettings = false;
+      }
+    });
   }
 
   async loadCustomers() {
@@ -237,48 +271,83 @@ export class InvoiceFormComponent implements OnInit {
     // let logoUrl = this.invoiceForm.get('logo')?.value || ''; // Logo URL is not set per invoice anymore
 
     try {
-      // if (this.logoFile) { // Removed
-      //   logoUrl = await this.invoiceService.uploadLogo(this.logoFile);
-      // }
+      const formValue = this.invoiceForm.getRawValue(); // Use getRawValue to include disabled fields like lineTotal
+      let invoiceNumber = '';
+      let nextInvoiceNum = 1;
 
-      const formValue = this.invoiceForm.value;
-      // Adjust type to match what InvoiceService.createInvoice expects
+      if (this.appSettings && this.appSettings.invoiceSettings) {
+        const prefix = this.appSettings.invoiceSettings.invoiceNumberPrefix || '';
+        nextInvoiceNum = this.appSettings.invoiceSettings.nextInvoiceNumber || 1;
+        invoiceNumber = `${prefix}${nextInvoiceNum}`;
+      } else {
+        // Fallback if settings not loaded (should ideally not happen or be handled more gracefully)
+        invoiceNumber = `INV-${new Date().getTime()}`; // Simple fallback
+      }
+
+      let dueDate: Date | undefined = undefined;
+      if (formValue.dueDate) {
+        dueDate = new Date(formValue.dueDate);
+      } else if (this.appSettings?.invoiceSettings?.defaultPaymentTermsDays !== undefined) {
+        const paymentTermsDays = this.appSettings.invoiceSettings.defaultPaymentTermsDays;
+        if (typeof paymentTermsDays === 'number' && paymentTermsDays >= 0) {
+          dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + paymentTermsDays);
+        }
+      }
+
+
       const invoiceData: Omit<Invoice, 'id' | 'paymentStatus' | 'totalPaid'> = {
         customer: formValue.customer,
         clientManager: formValue.clientManager,
         templateId: formValue.templateId,
         currency: formValue.currency,
-        items: formValue.items.map((item: any) => ({ // Process items to include lineTotal
+        invoiceNumber: invoiceNumber, // Added generated invoice number
+        date: new Date(), // Current date for invoice creation
+        dueDate: dueDate, // Calculated or form-provided due date
+        items: formValue.items.map((item: any) => ({
           description: item.description,
           quantity: Number(item.quantity),
           unitPrice: Number(item.unitPrice),
           lineTotal: (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
         })),
-        subtotal: this.subtotal, // Original subtotal before discount
+        subtotal: this.subtotal,
         discountType: formValue.discountType,
         discountValue: formValue.discountValue ? Number(formValue.discountValue) : null,
-        discountAmount: this.calculatedDiscountAmount, // Calculated discount amount
-        // Note: GST and Total are calculated based on subtotalAfterDiscount,
-        // but they are stored on the invoice based on their final calculated values.
+        discountAmount: this.calculatedDiscountAmount,
         gst: this.gst,
         total: this.total,
         amountInWords: this.amountInWords,
-        date: new Date(),
       };
 
-      await this.invoiceService.createInvoice(invoiceData);
-      this.successMessage = 'Invoice saved successfully!';
-      this.invoiceForm.reset({
-        customer: '',
-        clientManager: '',
-        templateId: DEFAULT_TEMPLATE_ID,
-        currency: DEFAULT_CURRENCY_CODE,
-        discountType: null, // Reset discount fields
-        discountValue: null
-      });
-      this.items.clear();
-      this.addItem();
-      // Consider navigating away or showing a persistent success message
+      const newInvoiceId = await this.invoiceService.createInvoice(invoiceData);
+      this.successMessage = `Invoice ${invoiceNumber} saved successfully! (ID: ${newInvoiceId})`;
+
+      // Increment next invoice number in settings if auto-increment is enabled
+      if (this.appSettings?.invoiceSettings?.autoIncrementInvoiceNumber && this.appSettings?.invoiceSettings) {
+        const newNextNumber = (this.appSettings.invoiceSettings.nextInvoiceNumber || 1) + 1;
+        // Update the local cache first for immediate reflection if needed, then save
+        this.appSettings.invoiceSettings.nextInvoiceNumber = newNextNumber;
+        // This specific update is tricky; might be better to save the whole appSettings object
+        // or have a dedicated method in SettingsService that handles this update robustly.
+        // For now, we'll rely on a full settings save if this component had a save button for its own defaults.
+        // Or, more simply, the SettingsComponent is responsible for updating nextInvoiceNumber.
+        // Let's assume SettingsService.updateInvoiceNumberSetting is robust or we save full settings.
+        try {
+            // Create a new AppSettings object with the updated nextInvoiceNumber
+            const updatedSettings: AppSettings = JSON.parse(JSON.stringify(this.appSettings)); // Deep copy
+            if (updatedSettings.invoiceSettings) {
+                updatedSettings.invoiceSettings.nextInvoiceNumber = newNextNumber;
+            }
+            await this.settingsService.saveSettings(updatedSettings);
+        } catch (settingsError) {
+            console.error("Failed to update next invoice number in settings:", settingsError);
+            // Non-critical for invoice creation itself, but admin should be aware.
+            this.errorMessage = "Invoice saved, but failed to update next invoice number in settings.";
+        }
+      }
+
+      this.resetInvoiceForm(); // Call new reset method
+
     } catch (error) {
       this.errorMessage = 'Failed to save invoice. Please try again.';
       console.error('Error saving invoice:', error);
@@ -319,7 +388,9 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   get gstRate(): number {
-    return 0.18; // Hardcoded, consider making this configurable
+    // Use rate from settings if available, otherwise fallback. Rate stored as e.g. 18 for 18%.
+    const rate = this.appSettings?.invoiceSettings?.defaultGstRate;
+    return (typeof rate === 'number' ? rate : 18) / 100; // Default to 18% if not set or invalid
   }
 
   get gst(): number {
@@ -403,5 +474,24 @@ export class InvoiceFormComponent implements OnInit {
         this.markFormGroupTouched(control);
       }
     });
+  }
+
+  private resetInvoiceForm(): void {
+    this.invoiceForm.reset({
+      customer: '',
+      // Apply defaults from settings again
+      clientManager: this.appSettings?.userProfileSettings?.userName || '',
+      templateId: this.appSettings?.invoiceSettings?.defaultTemplateId || DEFAULT_TEMPLATE_ID,
+      currency: this.appSettings?.invoiceSettings?.defaultCurrencyCode || DEFAULT_CURRENCY_CODE,
+      dueDate: null, // Clear due date
+      discountType: null,
+      discountValue: null
+    });
+    this.items.clear();
+    this.addItem(); // Add one empty item back
+
+    // Clear success/error messages for the form itself, but might leave saveInvoice related messages if they are separate
+    // this.successMessage = null; // Handled by saveInvoice itself with timeout
+    // this.errorMessage = null; // Handled by saveInvoice itself with timeout
   }
 }
