@@ -466,7 +466,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
                  (dueDate !== 'N/A' ? `This invoice was due on ${dueDate}.\n\n` : `Please find the details attached or contact us for more information.\n\n`) +
                  `Your prompt payment would be greatly appreciated.\n\n` +
                  `Thank you,\n` +
-                 `${this.defaultCompanyName}`;
+                 `${this.appSettings?.companyInformation?.companyName || 'Your Company Name'}`;
 
     const mailtoLink = `mailto:${this.customer.email}` +
                        `?subject=${encodeURIComponent(subject)}` +
