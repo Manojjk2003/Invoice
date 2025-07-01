@@ -44,6 +44,15 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   defaultTemplateIdLocal: InvoiceTemplateId = DEFAULT_TEMPLATE_ID;
   defaultCurrencyCodeLocal: CurrencyCode = DEFAULT_CURRENCY_CODE;
 
+  get effectiveCurrencyCode(): CurrencyCode {
+    if (this.invoice && this.invoice.currency) {
+      return this.invoice.currency;
+    }
+    if (this.appSettings && this.appSettings.invoiceSettings && this.appSettings.invoiceSettings.defaultCurrencyCode) {
+      return this.appSettings.invoiceSettings.defaultCurrencyCode;
+    }
+    return this.defaultCurrencyCodeLocal;
+  }
 
   constructor(
     private route: ActivatedRoute,

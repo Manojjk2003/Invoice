@@ -52,14 +52,14 @@
         <tr *ngFor="let item of invoice.items">
           <td>{{ item.description }}</td>
           <td class="quantity-column">{{ item.quantity }}</td>
-          <td class="amount">{{ item.unitPrice | currency:(invoice.currency || defaultCurrencyCode) }}</td>
-          <td class="amount">{{ item.lineTotal | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+          <td class="amount">{{ item.unitPrice | currency:effectiveCurrencyCode }}</td>
+          <td class="amount">{{ item.lineTotal | currency:effectiveCurrencyCode }}</td>
         </tr>
       </tbody>
       <tfoot>
         <tr>
           <td class="text-right">Subtotal:</td>
-          <td class="amount">{{ invoice.subtotal | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+          <td class="amount">{{ invoice.subtotal | currency:effectiveCurrencyCode }}</td>
         </tr>
         <tr *ngIf="invoice.discountAmount && invoice.discountAmount > 0">
           <td class="text-right">
@@ -67,27 +67,27 @@
             <small *ngIf="invoice.discountType === 'percentage'">({{ invoice.discountValue }}%)</small>
             <small *ngIf="invoice.discountType === 'fixed'">(Fixed)</small>:
           </td>
-          <td class="amount">- {{ invoice.discountAmount | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+          <td class="amount">- {{ invoice.discountAmount | currency:effectiveCurrencyCode }}</td>
         </tr>
         <tr *ngIf="invoice.discountAmount && invoice.discountAmount > 0">
             <td class="text-right">Subtotal After Discount:</td>
-            <td class="amount">{{ (invoice.subtotal - (invoice.discountAmount || 0)) | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+            <td class="amount">{{ (invoice.subtotal - (invoice.discountAmount || 0)) | currency:effectiveCurrencyCode }}</td>
         </tr>
         <tr>
           <td class="text-right">GST (18%):</td> <!-- Assuming 18%, make dynamic if needed -->
-          <td class="amount">{{ invoice.gst | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+          <td class="amount">{{ invoice.gst | currency:effectiveCurrencyCode }}</td>
         </tr>
         <tr>
           <td class="text-right"><strong>Total Amount:</strong></td>
-          <td class="amount"><strong>{{ invoice.total | currency:(invoice.currency || defaultCurrencyCode) }}</strong></td>
+          <td class="amount"><strong>{{ invoice.total | currency:effectiveCurrencyCode }}</strong></td>
         </tr>
         <tr>
           <td class="text-right">Total Paid:</td>
-          <td class="amount">{{ invoice.totalPaid | currency:(invoice.currency || defaultCurrencyCode) }}</td>
+          <td class="amount">{{ invoice.totalPaid | currency:effectiveCurrencyCode }}</td>
         </tr>
         <tr>
           <td class="text-right"><strong>Balance Due:</strong></td>
-          <td class="amount"><strong>{{ (invoice.total - invoice.totalPaid) | currency:(invoice.currency || defaultCurrencyCode) }}</strong></td>
+          <td class="amount"><strong>{{ (invoice.total - invoice.totalPaid) | currency:effectiveCurrencyCode }}</strong></td>
         </tr>
       </tfoot>
     </table>
@@ -103,7 +103,7 @@
     <div *ngIf="paymentErrorMessage" class="alert alert-warning">{{ paymentErrorMessage }}</div>
     <ul *ngIf="!isLoadingPayments && payments.length > 0">
       <li *ngFor="let payment of payments">
-        Paid {{ payment.amountPaid | currency:(invoice.currency || defaultCurrencyCode) }} on {{ payment.paymentDate | date:'longDate' }}
+        Paid {{ payment.amountPaid | currency:effectiveCurrencyCode }} on {{ payment.paymentDate | date:'longDate' }}
         <span *ngIf="payment.paymentMethod"> (Method: {{ payment.paymentMethod }})</span>
         <em *ngIf="payment.notes"> - Notes: {{ payment.notes }}</em>
       </li>
