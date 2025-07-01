@@ -1,23 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { SettingsService } from '../settings.service';
-import { AppSettings, InvoiceTemplateId, CurrencyCode, SUPPORTED_CURRENCIES, InvoiceTemplate } from '../core/models/app.models'; // Ensure correct path
-
-@Component({
-  selector: 'app-settings',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './settings.component.html',
-  styleUrls: ['./settings.component.css']
-})
-export class SettingsComponent implements OnInit {
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { SettingsService } from '../settings.service';
-import { AppSettings, InvoiceTemplateId, CurrencyCode, SUPPORTED_CURRENCIES, InvoiceTemplate, InvoicePrefixSetting } from '../core/models/app.models'; // Ensure correct path & InvoicePrefixSetting
+import { AppSettings, InvoiceTemplateId, CurrencyCode, SUPPORTED_CURRENCIES, InvoiceTemplate, InvoicePrefixSetting } from '../core/models/app.models';
 
-// Helper to generate a simple unique ID (for demo purposes, use a robust library like nanoid in production)
+// Helper to generate a simple unique ID
 function generateSimpleId(): string {
   return Math.random().toString(36).substring(2, 9);
 }
@@ -38,7 +25,6 @@ export class SettingsComponent implements OnInit {
   successMessage: string | null = null;
   errorMessage: string | null = null;
 
-  // For dropdowns
   invoiceTemplates: InvoiceTemplate[] = [
     { id: 'classic', name: 'Classic' },
     { id: 'modern', name: 'Modern' },
@@ -57,8 +43,8 @@ export class SettingsComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.buildForm(); // Build form with initial structure (empty or default)
-    this.loadSettings(); // Load settings and populate/rebuild form
+    this.buildForm();
+    this.loadSettings();
   }
 
   private buildForm(initialSettings?: AppSettings | null): void {
@@ -90,50 +76,41 @@ export class SettingsComponent implements OnInit {
       })
     });
 
-    // Populate invoicePrefixes FormArray if initialSettings are provided
-    if (initialSettings && initialSettings.invoiceSettings && initialSettings.invoiceSettings.invoicePrefixes) {
-      initialSettings.invoiceSettings.invoicePrefixes.forEach(prefixSetting => {
-        this.invoicePrefixesArray.push(this.createInvoicePrefixGroup(prefixSetting));
-      });
-    } else if (defaults.invoiceSettings && defaults.invoiceSettings.invoicePrefixes) {
-      // Populate with default if no initial settings but defaults exist
-      defaults.invoiceSettings.invoicePrefixes.forEach(prefixSetting => {
-        this.invoicePrefixesArray.push(this.createInvoicePrefixGroup(prefixSetting));
-      });
-    }
+    // Clear previous FormArray items before populating
+    this.invoicePrefixesArray.clear();
+
+    const prefixesToPopulate = (initialSettings?.invoiceSettings?.invoicePrefixes?.length)
+      ? initialSettings.invoiceSettings.invoicePrefixes
+      : (defaults.invoiceSettings?.invoicePrefixes || []);
+
+    prefixesToPopulate.forEach(prefixSetting => {
+      this.invoicePrefixesArray.push(this.createInvoicePrefixGroup(prefixSetting));
+    });
   }
 
-  // Getter for easy access to the FormArray
   get invoicePrefixesArray(): FormArray {
     return this.settingsForm.get('invoiceSettings.invoicePrefixes') as FormArray;
   }
 
-  // Creates a FormGroup for an InvoicePrefixSetting
   private createInvoicePrefixGroup(prefixSetting?: InvoicePrefixSetting): FormGroup {
     const newId = prefixSetting?.id || generateSimpleId();
     return this.fb.group({
-      id: [newId, Validators.required], // Keep ID, useful for tracking, especially if items can be reordered or specifically targeted.
+      id: [newId, Validators.required],
       prefix: [prefixSetting?.prefix || '', Validators.required],
       nextInvoiceNumber: [prefixSetting?.nextInvoiceNumber || 1, [Validators.required, Validators.min(1)]]
     });
   }
 
-  // Adds a new prefix configuration to the FormArray
   addInvoicePrefix(): void {
     this.invoicePrefixesArray.push(this.createInvoicePrefixGroup());
-    // If this is the first prefix added, make it the default
     if (this.invoicePrefixesArray.length === 1) {
       this.settingsForm.get('invoiceSettings.defaultPrefixId')?.setValue(this.invoicePrefixesArray.at(0).get('id')?.value);
     }
   }
 
-  // Removes a prefix configuration from the FormArray
   removeInvoicePrefix(index: number): void {
     const removedPrefixId = this.invoicePrefixesArray.at(index).get('id')?.value;
     this.invoicePrefixesArray.removeAt(index);
-
-    // If the removed prefix was the default, and there are other prefixes, set the first one as new default.
-    // If no prefixes left, clear defaultPrefixId.
     const currentDefaultPrefixId = this.settingsForm.get('invoiceSettings.defaultPrefixId')?.value;
     if (removedPrefixId === currentDefaultPrefixId) {
       if (this.invoicePrefixesArray.length > 0) {
@@ -144,24 +121,18 @@ export class SettingsComponent implements OnInit {
     }
   }
 
-
   loadSettings(): void {
     this.isLoading = true;
     this.settingsService.getSettings().subscribe({
       next: (settings) => {
-        if (settings) {
-          // Rebuild the form with loaded settings to correctly initialize FormArray
-          this.buildForm(settings);
-        } else {
-          // buildForm was already called in ngOnInit with defaults
-        }
+        this.buildForm(settings); // Rebuild form with loaded or default settings
         this.isLoading = false;
       },
       error: (err) => {
         this.errorMessage = 'Failed to load settings. Using default values.';
         console.error('Error loading settings:', err);
+        this.buildForm(null); // Ensure form is built with defaults on error
         this.isLoading = false;
-        // buildForm was already called in ngOnInit with defaults
       }
     });
   }
@@ -173,28 +144,27 @@ export class SettingsComponent implements OnInit {
       setTimeout(() => this.errorMessage = null, 7000);
       return;
     }
-     if (this.invoicePrefixesArray.length > 0 && !this.settingsForm.get('invoiceSettings.defaultPrefixId')?.value) {
+    if (this.invoicePrefixesArray.length > 0 && !this.settingsForm.get('invoiceSettings.defaultPrefixId')?.value) {
       this.errorMessage = 'Please select a default invoice prefix if you have defined one or more prefixes.';
       this.settingsForm.get('invoiceSettings.defaultPrefixId')?.markAsTouched();
       setTimeout(() => this.errorMessage = null, 7000);
       return;
     }
 
-
     this.isLoading = true;
     this.successMessage = null;
     this.errorMessage = null;
 
-    const formValues = this.settingsForm.getRawValue(); // Use getRawValue to include IDs from disabled fields if any
+    const formValues = this.settingsForm.getRawValue();
 
     const settingsToSave: AppSettings = {
       companyInformation: formValues.companyInformation,
       invoiceSettings: {
         ...formValues.invoiceSettings,
         invoicePrefixes: formValues.invoiceSettings.invoicePrefixes.map((p: any) => ({
-          id: p.id, // Ensure ID is part of the saved data
+          id: p.id,
           prefix: p.prefix,
-          nextInvoiceNumber: Number(p.nextInvoiceNumber) // Ensure number
+          nextInvoiceNumber: Number(p.nextInvoiceNumber)
         })),
         defaultPaymentTermsDays: Number(formValues.invoiceSettings.defaultPaymentTermsDays),
         defaultGstRate: Number(formValues.invoiceSettings.defaultGstRate),
@@ -205,10 +175,9 @@ export class SettingsComponent implements OnInit {
 
     try {
       await this.settingsService.saveSettings(settingsToSave);
-      this.settingsService.clearCache(); // Important: clear cache after saving
+      this.settingsService.clearCache();
       this.successMessage = 'Settings saved successfully!';
-      this.settingsService.clearCache(); // Ensure next load gets fresh data
-      // Optionally, reload settings into the form if saveSettings modifies data (e.g. server-side changes)
+      // Optionally re-load to confirm, but clearCache + new subscription should handle it
       // this.loadSettings();
     } catch (err) {
       this.errorMessage = 'Failed to save settings. Please try again.';
