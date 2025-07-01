@@ -473,7 +473,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
 
     const invoiceNumber = this.invoice.invoiceNumber || this.invoice.id;
-    const totalAmount = this.decimalPipe.transform(this.invoice.total, '1.2-2') || 'N/A';
+    const totalAmount = this.decimalPipe.transform(this.invoice.grandTotal, '1.2-2') || 'N/A';
     const dueDate = this.invoice.dueDate ? (this.datePipe.transform(this.invoice.dueDate, 'longDate') || 'N/A') : 'N/A';
 
     const subject = `Payment Reminder: Invoice #${invoiceNumber}`;
