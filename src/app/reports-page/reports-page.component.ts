@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Models
 import { Invoice, Expense, Customer, CurrencyCode, DEFAULT_CURRENCY_CODE } from '../core/models/app.models';
@@ -164,7 +166,97 @@ export class ReportsPageComponent implements OnInit {
   }
 
   downloadReportAsPdf(): void {
-    console.log('Download PDF clicked for report type (placeholder):', this.currentReportType);
-    alert('PDF Download functionality to be implemented!');
+    if (!this.currentReportType || this.reportData.length === 0) {
+      this.errorMessage = 'No report data available to download.';
+      return;
+    }
+
+    const doc = new jsPDF();
+    const currencyPipe = new CurrencyPipe('en-US'); // Use appropriate locale
+    const datePipe = new DatePipe('en-US');
+
+    const reportTitle = this.currentReportType === 'invoiceLog' ? 'Invoice Log' : 'Expense Log';
+    const startDate = datePipe.transform(this.reportForm.value.startDate, 'mediumDate');
+    const endDate = datePipe.transform(this.reportForm.value.endDate, 'mediumDate');
+    const title = `${reportTitle} (${startDate} - ${endDate})`;
+
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+
+    let head: string[][] = [];
+    let body: any[][] = [];
+    let summaryText: string[] = [];
+    let finalY = 0; // To track where the table ends
+
+    if (this.currentReportType === 'invoiceLog') {
+      head = [['Invoice ID', 'Date', 'Customer', 'Product(s)', 'Status', 'Amount']];
+      body = this.reportData.map(row => [
+        row.invoiceId,
+        datePipe.transform(row.date, 'mediumDate'),
+        row.customerName,
+        row.productNames,
+        row.paymentStatus,
+        currencyPipe.transform(row.grandTotal, row.currency || DEFAULT_CURRENCY_CODE)
+      ]);
+      summaryText = [
+        `Total Paid Invoices: ${this.invoiceLogSummary.totalPaidInvoices}`,
+        `Total Unpaid Invoices: ${this.invoiceLogSummary.totalUnpaidInvoices}`,
+        `Total Partially Paid Invoices: ${this.invoiceLogSummary.totalPartiallyPaidInvoices}`,
+        `Total Paid Amount: ${currencyPipe.transform(this.invoiceLogSummary.totalPaidAmount, DEFAULT_CURRENCY_CODE)}`
+      ];
+    } else if (this.currentReportType === 'expenseLog') {
+      head = [['Date', 'Category', 'Description', 'Vendor', 'Amount']];
+      body = this.reportData.map(row => [
+        datePipe.transform(row.date, 'mediumDate'),
+        row.category,
+        row.description,
+        row.vendorName,
+        currencyPipe.transform(row.amount, row.currency || DEFAULT_CURRENCY_CODE)
+      ]);
+      summaryText = [
+        `Total Expenses: ${currencyPipe.transform(this.expenseLogSummary.totalExpenseAmount, DEFAULT_CURRENCY_CODE)}`
+      ];
+    }
+
+    autoTable(doc, {
+      head: head,
+      body: body,
+      startY: 30,
+      didDrawPage: (data) => {
+        // Header could be repeated per page if needed
+      },
+      didParseCell: (data) => {
+        // Custom cell styling if needed
+      },
+      // Ensure finalY is set after the table is drawn
+      didDrawTable: (data) => {
+        finalY = data.cursor?.y || 0;
+      }
+    });
+
+    // Add summary section
+    if (summaryText.length > 0) {
+      doc.setFontSize(10);
+      let summaryYPosition = finalY + 10; // Start 10 units below the table
+
+      // Check if summary fits on the current page, otherwise add a new page
+      const pageHeight = doc.internal.pageSize.height;
+      const summaryHeight = summaryText.length * 5 + 5; // Approximate height of summary block
+      if (summaryYPosition + summaryHeight > pageHeight - 20) { // 20 for bottom margin
+        doc.addPage();
+        summaryYPosition = 20; // Start near top of new page
+      }
+
+      doc.text('Summary:', 14, summaryYPosition);
+      summaryYPosition += 5;
+      summaryText.forEach(line => {
+        doc.text(line, 14, summaryYPosition);
+        summaryYPosition += 5;
+      });
+    }
+
+    const fileName = `${reportTitle.toLowerCase().replace(/\s+/g, '_')}_${this.formatDate(new Date())}.pdf`;
+    doc.save(fileName);
+    this.errorMessage = null; // Clear any previous error
   }
 }
