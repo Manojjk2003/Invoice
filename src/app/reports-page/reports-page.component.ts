@@ -225,13 +225,13 @@ export class ReportsPageComponent implements OnInit {
       startY: 30,
       didDrawPage: (data: any) => {
         // Header could be repeated per page if needed
+        // Capture the final Y position after the table is drawn on the last page
+        if (data.pageNumber === doc.getNumberOfPages()) {
+          finalY = data.cursor?.y || 0;
+        }
       },
       didParseCell: (data: any) => {
         // Custom cell styling if needed
-      },
-      // Ensure finalY is set after the table is drawn
-      didDrawTable: (data: any) => {
-        finalY = data.cursor?.y || 0;
       }
     });
 
