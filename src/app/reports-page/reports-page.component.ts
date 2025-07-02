@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable'; // Reverted to default import
+import * as autoTableLib from 'jspdf-autotable'; // Namespace import
 
 // Models
 import { Invoice, Expense, Customer, CurrencyCode, DEFAULT_CURRENCY_CODE } from '../core/models/app.models';
@@ -218,7 +218,8 @@ export class ReportsPageComponent implements OnInit {
       ];
     }
 
-    autoTable(doc, { // Ensuring direct function call
+    // Assuming autoTable is the default export, accessible via .default with namespace import
+    autoTableLib.default(doc, {
       head: head,
       body: body,
       startY: 30,
