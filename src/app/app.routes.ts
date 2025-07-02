@@ -20,4 +20,5 @@ export const routes: Routes = [
   { path: 'products', component: ProductManagementComponent }, // Route for Product Management
   { path: 'vendors', component: VendorManagementComponent },   // Route for Vendor Management
   { path: 'settings', component: SettingsComponent },     // Route for Settings
+  { path: 'reports', loadComponent: () => import('./reports-page/reports-page.component').then(m => m.ReportsPageComponent) }, // Route for Reports
 ];

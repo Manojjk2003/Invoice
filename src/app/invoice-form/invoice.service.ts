@@ -2,7 +2,7 @@
 import { Injectable, inject } from '@angular/core'; // Added inject
 import {
   collection, addDoc, getDocs, updateDoc, doc, deleteDoc, CollectionReference, DocumentReference,
-  query, where, writeBatch, getDoc, runTransaction, Firestore
+  query, where, writeBatch, getDoc, runTransaction, Firestore, Timestamp, orderBy
 } from '@angular/fire/firestore'; // Changed to @angular/fire/firestore
 import { ref, uploadBytes, getDownloadURL, StorageReference } from 'firebase/storage';
 import { Storage } from '@angular/fire/storage';
@@ -151,6 +151,37 @@ export class InvoiceService {
       });
     } catch (error) {
       console.error("Error fetching all payments:", error);
+      throw error;
+    }
+  }
+
+  async getInvoicesByDateRange(startDate: Date, endDate: Date): Promise<Invoice[]> {
+    try {
+      // Ensure endDate goes to the end of the selected day for inclusive range
+      const endDateAdjusted = new Date(endDate);
+      endDateAdjusted.setHours(23, 59, 59, 999);
+
+      const q = query(
+        this.invoicesRef,
+        where('date', '>=', Timestamp.fromDate(startDate)),
+        where('date', '<=', Timestamp.fromDate(endDateAdjusted)),
+        orderBy('date', 'desc') // Optional: order by date, descending
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Ensure date fields are converted to JS Date objects
+        const invoiceDate = data['date'] as any;
+        const dueDate = data['dueDate'] as any;
+        return {
+          id: doc.id,
+          ...data,
+          date: invoiceDate && invoiceDate.toDate ? invoiceDate.toDate() : new Date(invoiceDate),
+          dueDate: dueDate && dueDate.toDate ? dueDate.toDate() : (dueDate ? new Date(dueDate) : undefined)
+        } as Invoice;
+      });
+    } catch (error) {
+      console.error("Error fetching invoices by date range:", error);
       throw error;
     }
   }

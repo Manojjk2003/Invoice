@@ -1,0 +1,124 @@
+<div class="reports-container">
+  <h2>Generate Reports</h2>
+
+  <form [formGroup]="reportForm" (ngSubmit)="onSubmit()" class="mb-4">
+    <div class="form-row align-items-end">
+      <div class="form-group col-md-4">
+        <label for="reportType">Report Type:</label>
+        <select id="reportType" formControlName="reportType" class="form-control">
+          <option *ngFor="let option of reportTypeOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group col-md-3">
+        <label for="startDate">Start Date:</label>
+        <input type="date" id="startDate" formControlName="startDate" class="form-control">
+      </div>
+      <div class="form-group col-md-3">
+        <label for="endDate">End Date:</label>
+        <input type="date" id="endDate" formControlName="endDate" class="form-control">
+      </div>
+      <div class="form-group col-md-2">
+        <button type="submit" class="btn btn-primary w-100" [disabled]="reportForm.invalid || isLoading">
+          {{ isLoading ? 'Generating...' : 'Generate Report' }}
+        </button>
+      </div>
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger mt-2">{{ errorMessage }}</div>
+  </form>
+
+  <hr>
+
+  <div *ngIf="isLoading" class="text-center">
+    <p>Loading report data...</p>
+    <!-- You can add a spinner here -->
+  </div>
+
+  <div *ngIf="!isLoading && reportData.length > 0 && currentReportType">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3>
+        <span *ngIf="currentReportType === 'invoiceLog'">Invoice Log</span>
+        <span *ngIf="currentReportType === 'expenseLog'">Expense Log</span>
+        ({{ reportForm.value.startDate }} to {{ reportForm.value.endDate }})
+      </h3>
+      <button type="button" class="btn btn-success" (click)="downloadReportAsPdf()" [disabled]="reportData.length === 0">
+        Download PDF
+      </button>
+    </div>
+
+    <!-- Invoice Log Table -->
+    <div *ngIf="currentReportType === 'invoiceLog'">
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Invoice ID</th>
+            <th>Date</th>
+            <th>Customer Name</th>
+            <th>Product/Service(s)</th>
+            <th>Status</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of reportData">
+            <td>{{ row.invoiceId }}</td>
+            <td>{{ row.date | date:'mediumDate' }}</td>
+            <td>{{ row.customerName }}</td>
+            <td>{{ row.productNames }}</td>
+            <td>{{ row.paymentStatus }}</td>
+            <td class="text-right">{{ row.grandTotal | currency: (row.currency || 'INR') }}</td>
+          </tr>
+          <tr *ngIf="reportData.length === 0">
+            <td colspan="6" class="text-center font-italic">No invoice data for the selected criteria.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="report-summary mt-3 p-3 border rounded">
+        <h4>Invoice Summary</h4>
+        <p>Total Paid Invoices: {{ invoiceLogSummary.totalPaidInvoices }}</p>
+        <p>Total Unpaid Invoices: {{ invoiceLogSummary.totalUnpaidInvoices }}</p>
+        <p>Total Partially Paid Invoices: {{ invoiceLogSummary.totalPartiallyPaidInvoices }}</p>
+        <p><strong>Total Paid Amount: {{ invoiceLogSummary.totalPaidAmount | currency:'INR' }}</strong></p>
+        <!-- Assuming summary amount is always INR or needs conversion logic if multi-currency invoices are summed -->
+      </div>
+    </div>
+
+    <!-- Expense Log Table -->
+    <div *ngIf="currentReportType === 'expenseLog'">
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Vendor</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of reportData">
+            <td>{{ row.date | date:'mediumDate' }}</td>
+            <td>{{ row.category }}</td>
+            <td>{{ row.description }}</td>
+            <td>{{ row.vendorName }}</td>
+            <td class="text-right">{{ row.amount | currency:row.currency }}</td>
+          </tr>
+          <tr *ngIf="reportData.length === 0">
+            <td colspan="5" class="text-center font-italic">No expense data for the selected criteria.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="report-summary mt-3 p-3 border rounded">
+        <h4>Expense Summary</h4>
+        <p><strong>Total Expenses: {{ expenseLogSummary.totalExpenseAmount | currency:'INR' }}</strong></p>
+        <!-- Assuming summary amount is always INR or needs conversion logic if multi-currency expenses are summed -->
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading && reportForm.dirty && reportData.length === 0 && currentReportType" class="alert alert-info mt-3">
+    No data found for the selected criteria.
+  </div>
+
+</div>

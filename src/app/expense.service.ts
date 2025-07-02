@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core'; // Added inject
 import {
   collection, addDoc, getDocs, updateDoc, doc, deleteDoc, CollectionReference, DocumentReference,
-  query, orderBy, Firestore
+  query, orderBy, Firestore, where, Timestamp
 } from '@angular/fire/firestore'; // Changed to @angular/fire/firestore
 import { ref, uploadBytes, getDownloadURL, StorageReference, deleteObject as deleteFile } from 'firebase/storage';
 import { Storage } from '@angular/fire/storage';
@@ -115,6 +115,35 @@ export class ExpenseService {
         console.error(`Error deleting storage file ${receiptUrl}:`, fileError);
         throw fileError; // Re-throw to indicate the file deletion failed, caller can decide how to handle
       }
+    }
+  }
+
+  async getExpensesByDateRange(startDate: Date, endDate: Date): Promise<Expense[]> {
+    try {
+      // Ensure endDate goes to the end of the selected day for inclusive range
+      const endDateAdjusted = new Date(endDate);
+      endDateAdjusted.setHours(23, 59, 59, 999);
+
+      const q = query(
+        this.expensesRef,
+        where('date', '>=', Timestamp.fromDate(startDate)),
+        where('date', '<=', Timestamp.fromDate(endDateAdjusted)),
+        orderBy('date', 'desc') // Optional: order by date, descending
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        // Ensure date field is converted to JS Date object
+        const expenseDate = data['date'] as any;
+        return {
+          id: docSnap.id,
+          ...data,
+          date: expenseDate && expenseDate.toDate ? expenseDate.toDate() : new Date(expenseDate)
+        } as Expense;
+      });
+    } catch (error) {
+      console.error("Error fetching expenses by date range:", error);
+      throw error;
     }
   }
 }
