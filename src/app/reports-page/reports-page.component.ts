@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import 'jspdf-autotable';
 
 // Models
 import { Invoice, Expense, Customer, CurrencyCode, DEFAULT_CURRENCY_CODE } from '../core/models/app.models';
@@ -218,18 +218,18 @@ export class ReportsPageComponent implements OnInit {
       ];
     }
 
-    autoTable(doc, {
+    doc.autoTable({ // Removed 'as any' cast
       head: head,
       body: body,
       startY: 30,
-      didDrawPage: (data) => {
+      didDrawPage: (data: any) => {
         // Header could be repeated per page if needed
       },
-      didParseCell: (data) => {
+      didParseCell: (data: any) => {
         // Custom cell styling if needed
       },
       // Ensure finalY is set after the table is drawn
-      didDrawTable: (data) => {
+      didDrawTable: (data: any) => {
         finalY = data.cursor?.y || 0;
       }
     });
