@@ -5,13 +5,13 @@
 export const environment = {
   production: false,
   firebaseConfig: {
-    apiKey: "AIzaSyAFG73LQbkPLeyTrMYauJgTu0eAGDzIGUE",
-    authDomain: "invoice-app-87ff8.firebaseapp.com",
-    projectId: "invoice-app-87ff8",
-    storageBucket: "invoice-app-87ff8.firebasestorage.app",
-    messagingSenderId: "549235189595",
-    appId: "1:549235189595:web:9c5122e9ecf11985e91c7e",
-    measurementId: "G-N6PBHCLV7P"
+   apiKey: "AIzaSyAFG73LQbkPLeyTrMYauJgTu0eAGDzIGUE",
+  authDomain: "invoice-app-87ff8.firebaseapp.com",
+  projectId: "invoice-app-87ff8",
+  storageBucket: "invoice-app-87ff8.firebasestorage.app",
+  messagingSenderId: "549235189595",
+  appId: "1:549235189595:web:9c5122e9ecf11985e91c7e",
+  measurementId: "G-N6PBHCLV7P"
   }
 };
 

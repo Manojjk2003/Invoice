@@ -12,13 +12,15 @@ import {
   CurrencyCode, DEFAULT_CURRENCY_CODE, SUPPORTED_CURRENCIES, AppSettings // Added AppSettings
 } from '../core/models/app.models';
 import { SettingsService } from '../settings.service'; // Added SettingsService
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {SideNavbarComponent } from '../navigation/side-navbar/side-navbar.component'; 
 
 // Removed SimpleDatePipe
 
 @Component({
   selector: 'app-invoice-detail',
   standalone: true, // Ensuring it's standalone
-  imports: [CommonModule, RouterLink], // Removed SimpleDatePipe from imports
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, FormsModule, SideNavbarComponent], // Removed SimpleDatePipe from imports
   templateUrl: './invoice-detail.component.html',
   styleUrls: ['./invoice-detail.component.css']
 })
@@ -37,6 +39,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   paymentErrorMessage: string | null = null; // Separate error message for payments
   settingsErrorMessage: string | null = null; // Added
   private routeSub!: Subscription;
+  hideSidebar = false;
 
   appSettings: AppSettings | null = null; // To store loaded settings
 
@@ -185,9 +188,16 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  printInvoice(): void {
+  // printInvoice(): void {
+  //   window.print();
+  // }
+printInvoice(): void {
+  this.hideSidebar = true;
+  setTimeout(() => {
     window.print();
-  }
+    this.hideSidebar = false;
+  }, 100);
+}
 
   downloadInvoiceAsPdf(): void {
     if (!this.invoice || !this.customer) {

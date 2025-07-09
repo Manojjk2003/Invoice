@@ -221,35 +221,63 @@ footer {
   border-bottom: none;
 }
 
-
 /* Print-specific styles */
 @media print {
+  /* Hide everything by default */
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
   }
-  .invoice-detail-container, .invoice-detail-container * {
-    visibility: visible;
+
+  /* Show only invoice content */
+  #invoice-content,
+  #invoice-content * {
+    visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
   }
-  .invoice-detail-container {
-    position: absolute;
-    left: 0;
+
+  #invoice-content {
+    position: absolute !important;
     top: 0;
+    left: 0;
     width: 100%;
-    margin: 0;
-    padding: 0;
-    border: none;
-    box-shadow: none; /* Remove shadow if any for print */
+    background: white !important;
+    z-index: 9999 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
   }
-  .actions {
-    display: none; /* Hide buttons when printing */
+
+  /* Prevent second page */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
   }
-  /* Ensure background colors don't print unless necessary */
-  .invoice-items th {
-    background-color: #f2f2f2 !important; /* Important to override user agent styles */
-    -webkit-print-color-adjust: exact; /* Chrome, Safari, Edge */
-    print-color-adjust: exact; /* Firefox */
+
+  /* Remove unnecessary UI */
+  .print-button,
+  .download-pdf-button,
+  .send-reminder-button,
+  .back-button {
+    display: none !important;
+  }
+
+  /* Footer handling */
+  footer {
+    page-break-after: avoid !important;
+    margin-bottom: 0 !important;
+  }
+   app-side-navbar {
+    display: none;
   }
 }
+
 
 /* Template Specific Styles */
 
